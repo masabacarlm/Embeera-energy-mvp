@@ -1,0 +1,97 @@
+Embeera Energy Mobile App Screens
+=================================
+
+1. Welcome Screen
+
+Purpose:
+Introduces Embeera Energy to the user.
+
+Content:
+- Embeera Energy name
+- Tagline: Saving Together. Living Better.
+- Login button
+- Register button
+
+2. Registration Screen
+
+Purpose:
+Allows a household user to create an account.
+
+Fields:
+- Full name
+- Phone number
+- Location
+- Household type
+- Preferred access method: App or USSD
+
+3. Dashboard Screen
+
+Purpose:
+Shows the user's main progress.
+
+Content:
+- User name
+- Current Oluganda Circle
+- Amount saved
+- Savings target
+- Progress percentage
+- Quick buttons: Save, Learn, Rewards, Delivery
+
+4. Oluganda Circle Screen
+
+Purpose:
+Shows savings group details.
+
+Content:
+- Group name
+- Group location
+- Number of members
+- Total group savings
+- Savings target
+- Member contribution history
+
+5. Save Money Screen
+
+Purpose:
+Allows the user to make a mock savings payment.
+
+Content:
+- Amount input
+- MTN MoMo option
+- Airtel Money option
+- Confirm payment button
+- Payment success message
+
+6. Learning Screen
+
+Purpose:
+Teaches users about clean cooking and LPG safety.
+
+Content:
+- Benefits of LPG
+- LPG safety tips
+- Transition checklist
+- Lesson completion status
+
+7. Rewards Screen
+
+Purpose:
+Shows rewards earned by the user.
+
+Content:
+- Reward points
+- Referral rewards
+- Savings rewards
+- Enkola Certificate status
+
+8. LPG Delivery Tracking Screen
+
+Purpose:
+Tracks LPG stove and cylinder delivery.
+
+Content:
+- Delivery request status
+- Pending
+- In Transit
+- Delivered
+- Completed
