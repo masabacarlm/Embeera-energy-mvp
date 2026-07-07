@@ -131,6 +131,72 @@ The MVP database includes:
 - deliveries
 - certificates
 
+Backend MySQL Setup
+-------------------
+
+1. Install backend dependencies:
+
+   ```bash
+   cd backend
+   npm install
+   ```
+
+2. Create your local environment file:
+
+   ```bash
+   copy .env.example .env
+   ```
+
+   Then edit `backend/.env` with your own MySQL username and password. Do not commit real passwords.
+
+   Example:
+
+   ```env
+   PORT=5000
+   DB_HOST=localhost
+   DB_USER=root
+   DB_PASSWORD=your_mysql_password
+   DB_NAME=embeera_energy
+   ```
+
+3. Create and seed the MySQL database from the existing SQL files:
+
+   Windows PowerShell:
+
+   ```powershell
+   Get-Content ..\database\schema.sql | mysql -u root -p
+   Get-Content ..\database\seed.sql | mysql -u root -p
+   ```
+
+   Git Bash, macOS, or Linux:
+
+   ```bash
+   mysql -u root -p < ../database/schema.sql
+   mysql -u root -p < ../database/seed.sql
+   ```
+
+   Run these commands from the `backend` folder. MySQL will ask for your password.
+
+4. Start the backend:
+
+   ```bash
+   npm start
+   ```
+
+   The API should run at `http://localhost:5000`.
+
+MySQL-Backed API Routes
+-----------------------
+
+These routes now read from or write to MySQL:
+
+- POST `/api/users/register`
+- POST `/api/groups/join`
+- POST `/api/payments/mock`
+- GET `/api/savings/progress/:user_id`
+- GET `/api/rewards/:user_id`
+- POST `/api/deliveries/request`
+
 Demo Scenario
 -------------
 
