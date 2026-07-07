@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
 const groupRoutes = require("./routes/groupRoutes");
@@ -24,7 +25,7 @@ app.use("/api/savings", savingsRoutes);
 app.use("/api/rewards", rewardRoutes);
 app.use("/api/deliveries", deliveryRoutes);
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Embeera Energy backend running on port ${PORT}`);
