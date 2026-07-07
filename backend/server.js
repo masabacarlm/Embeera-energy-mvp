@@ -1,6 +1,13 @@
 const express = require("express");
 const cors = require("cors");
 
+const userRoutes = require("./routes/userRoutes");
+const groupRoutes = require("./routes/groupRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const savingsRoutes = require("./routes/savingsRoutes");
+const rewardRoutes = require("./routes/rewardRoutes");
+const deliveryRoutes = require("./routes/deliveryRoutes");
+
 const app = express();
 
 app.use(cors());
@@ -10,53 +17,12 @@ app.get("/", (req, res) => {
   res.send("Embeera Energy Backend is running");
 });
 
-app.post("/api/users/register", (req, res) => {
-  res.json({
-    message: "User registered successfully",
-    user: req.body
-  });
-});
-
-app.post("/api/groups/join", (req, res) => {
-  res.json({
-    message: "User joined Oluganda Circle successfully",
-    data: req.body
-  });
-});
-
-app.post("/api/payments/mock", (req, res) => {
-  res.json({
-    message: "Mock payment successful",
-    payment_status: "successful",
-    data: req.body
-  });
-});
-
-app.get("/api/savings/progress/:user_id", (req, res) => {
-  res.json({
-    user_id: req.params.user_id,
-    amount_saved: 80000,
-    savings_target: 250000,
-    progress_percentage: 32,
-    remaining_amount: 170000
-  });
-});
-
-app.get("/api/rewards/:user_id", (req, res) => {
-  res.json({
-    user_id: req.params.user_id,
-    reward_points: 120,
-    certificate_status: "In Progress"
-  });
-});
-
-app.post("/api/deliveries/request", (req, res) => {
-  res.json({
-    message: "LPG delivery request created",
-    delivery_status: "Pending",
-    data: req.body
-  });
-});
+app.use("/api/users", userRoutes);
+app.use("/api/groups", groupRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/savings", savingsRoutes);
+app.use("/api/rewards", rewardRoutes);
+app.use("/api/deliveries", deliveryRoutes);
 
 const PORT = 5000;
 
