@@ -1,97 +1,106 @@
-Embeera Energy Mobile App Screens
-=================================
+Embeera Energy Mobile App Demo Screens
+======================================
+
+This classroom demo is implemented in frontend/App.js as one simple scrollable
+React Native Expo screen. Complex navigation is intentionally not included yet.
 
 1. Welcome Screen
 
 Purpose:
-Introduces Embeera Energy to the user.
+Introduces Embeera Energy as a clean cooking savings and health-tech MVP.
 
 Content:
-- Embeera Energy name
+- Embeera Energy MVP badge
 - Tagline: Saving Together. Living Better.
-- Login button
-- Register button
+- Short clean cooking explanation
+- Register and Login demo buttons
 
-2. Registration Screen
+2. Registration Screen Placeholder
 
 Purpose:
-Allows a household user to create an account.
+Shows what a future household registration form will collect.
 
-Fields:
+Content:
 - Full name
 - Phone number
-- Location
-- Household type
+- District or location
+- Household size
 - Preferred access method: App or USSD
 
-3. Dashboard Screen
+3. Dashboard Showing Savings Progress
 
 Purpose:
-Shows the user's main progress.
+Shows the user's savings journey toward an LPG starter kit.
 
 Content:
-- User name
-- Current Oluganda Circle
 - Amount saved
 - Savings target
 - Progress percentage
-- Quick buttons: Save, Learn, Rewards, Delivery
+- Simple progress bar
+- Circle, rewards points, and progress summary
 
 4. Oluganda Circle Screen
 
 Purpose:
-Shows savings group details.
+Shows group-based savings for households transitioning to LPG.
 
 Content:
-- Group name
-- Group location
+- Circle name
 - Number of members
-- Total group savings
-- Savings target
-- Member contribution history
+- Total circle savings
+- Shared LPG starter kit goal
 
-5. Save Money Screen
+5. Mock Payment Screen
 
 Purpose:
-Allows the user to make a mock savings payment.
+Demonstrates a simple mobile money savings payment.
 
 Content:
-- Amount input
+- Demo amount
 - MTN MoMo option
 - Airtel Money option
-- Confirm payment button
-- Payment success message
+- Successful demo transaction status
 
-6. Learning Screen
+6. Learning and LPG Safety Screen
 
 Purpose:
-Teaches users about clean cooking and LPG safety.
+Teaches clean cooking benefits and safe LPG use.
 
 Content:
-- Benefits of LPG
-- LPG safety tips
-- Transition checklist
-- Lesson completion status
+- Ventilation
+- Cylinder storage
+- Leak checks
+- Safe stove use
+- Lesson completion progress
 
-7. Rewards Screen
+7. Rewards and Enkola Certificate Screen
 
 Purpose:
-Shows rewards earned by the user.
+Shows incentives for saving, learning, referrals, and safe LPG adoption.
 
 Content:
 - Reward points
 - Referral rewards
 - Savings rewards
-- Enkola Certificate status
+- Enkola Certificate progress
 
 8. LPG Delivery Tracking Screen
 
 Purpose:
-Tracks LPG stove and cylinder delivery.
+Tracks delivery of the LPG starter kit.
 
 Content:
-- Delivery request status
-- Pending
-- In Transit
-- Delivered
-- Completed
+- Stove and cylinder delivery
+- Regulator and safety card
+- Delivery status
+- Current delivery stage
+
+Visual Style
+------------
+
+- Medical blue
+- Teal
+- White background
+- Rounded cards
+- Readable text
+- Simple beginner-friendly React Native code
