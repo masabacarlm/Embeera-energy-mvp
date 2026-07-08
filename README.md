@@ -1,138 +1,30 @@
 Embeera Energy
-==============
+===============
 
-Saving Together. Living Better.
+Embeera Energy is a local MVP for a Ugandan clean-energy savings product. It lets a household register, join an Oluganda Circle, make an internal mock savings payment, track savings progress, complete LPG learning, view rewards and certificate status, and request LPG delivery.
 
-Embeera Energy is a Ugandan clean-energy savings platform that helps households transition from charcoal and firewood cooking to cleaner LPG cooking through community savings groups, mobile app access, USSD access, mock mobile money savings, rewards, ambassadors, and LPG delivery tracking.
-
-Project Overview
-----------------
-
-Many Ugandan households still depend on charcoal and firewood for cooking. Although LPG is cleaner, many low-income households cannot afford an LPG stove and cylinder upfront. Embeera Energy solves this by helping households save gradually in trusted community groups called Oluganda Circles.
-
-Project Goal
-------------
-
-To create a simple MVP that demonstrates how a household can register, join an Oluganda Circle, save money, track progress, learn about clean cooking, request LPG delivery, earn rewards, and receive an Enkola Certificate after successful transition.
-
-Main MVP Features
------------------
-
-- User registration
-- Oluganda Circle group joining
-- Savings dashboard
-- Mock MTN MoMo payment flow
-- Mock Airtel Money payment flow
-- USSD menu simulation for *284*88#
-- Learning and transition tracking
-- Rewards system
-- Enkola Certificate status
-- Omukwano Ambassador referrals
-- LPG delivery tracking
-
-Technology Stack
-----------------
-
-Frontend:
-
-- React Native
-
-Backend:
-
-- Node.js
-- Express.js
-
-Database:
-
-- MySQL
-
-Payments:
-
-- Mock MTN MoMo flow
-- Mock Airtel Money flow
-
-USSD:
-
-- Simulated USSD menu for *284*88#
+This project is local-only. It does not include real MTN MoMo, Airtel Money, live USSD, GPS tracking, or deployment.
 
 Project Structure
 -----------------
 
+```text
 embeera-energy-mvp/
-  frontend/
-  backend/
-  database/
-  docs/
-  README.md
+  backend/      Node.js + Express API
+  frontend/     React Native Expo app
+  database/     MySQL schema and seed data
+  docs/         Project notes
+```
 
-Main User Journey
------------------
+Requirements
+------------
 
-Register  
-→ Join Oluganda Circle  
-→ Save Money  
-→ Track Progress  
-→ Learn About Clean Energy  
-→ Reach LPG Savings Target  
-→ Request LPG Delivery  
-→ Receive LPG Equipment  
-→ Receive Enkola Certificate  
-→ Earn Rewards
+- Node.js and npm
+- MySQL Server
+- Expo CLI through `npm start` in the frontend project
 
-Planned API Routes
-------------------
-
-User Routes:
-
-- POST /api/users/register
-- GET /api/users/:user_id
-
-Group Routes:
-
-- POST /api/groups/create
-- POST /api/groups/join
-- GET /api/groups/:group_id
-
-Savings Routes:
-
-- POST /api/savings/add
-- GET /api/savings/progress/:user_id
-
-Payment Routes:
-
-- POST /api/payments/mock
-
-Rewards Routes:
-
-- GET /api/rewards/:user_id
-
-Ambassador Routes:
-
-- POST /api/ambassadors/referral
-
-Delivery Routes:
-
-- POST /api/deliveries/request
-- GET /api/deliveries/:user_id
-
-Database Tables
----------------
-
-The MVP database includes:
-
-- users
-- oluganda_groups
-- group_members
-- savings_transactions
-- learning_progress
-- rewards
-- ambassadors
-- referrals
-- deliveries
-- certificates
-
-Backend MySQL Setup
--------------------
+Backend Setup
+-------------
 
 1. Install backend dependencies:
 
@@ -141,15 +33,19 @@ Backend MySQL Setup
    npm install
    ```
 
-2. Create your local environment file:
+2. Create a local backend environment file:
 
    ```bash
    copy .env.example .env
    ```
 
-   Then edit `backend/.env` with your own MySQL username and password. Do not commit real passwords.
+   On macOS or Linux:
 
-   Example:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Edit `backend/.env` with your own local MySQL details:
 
    ```env
    PORT=5000
@@ -159,85 +55,90 @@ Backend MySQL Setup
    DB_NAME=embeera_energy
    ```
 
-3. Create and seed the MySQL database from the existing SQL files:
+   Keep real passwords only in `backend/.env`. Do not commit them.
 
-   Windows PowerShell:
-
-   ```powershell
-   Get-Content ..\database\schema.sql | mysql -u root -p
-   Get-Content ..\database\seed.sql | mysql -u root -p
-   ```
-
-   Git Bash, macOS, or Linux:
-
-   ```bash
-   mysql -u root -p < ../database/schema.sql
-   mysql -u root -p < ../database/seed.sql
-   ```
-
-   Run these commands from the `backend` folder. MySQL will ask for your password.
-
-4. Start the backend:
-
-   ```bash
-   npm start
-   ```
-
-   The API should run at `http://localhost:5000`.
-
-MySQL-Backed API Routes
------------------------
-
-These routes now read from or write to MySQL:
-
-- POST `/api/users/register`
-- POST `/api/groups/join`
-- POST `/api/payments/mock`
-- GET `/api/savings/progress/:user_id`
-- GET `/api/rewards/:user_id`
-- POST `/api/deliveries/request`
-
-Demo Scenario
--------------
-
-A household in Mukono hears about Embeera Energy through an Omukwano Ambassador. The user registers using the mobile app or USSD code *284*88#. The user joins the Mukono Clean Cooking Oluganda Circle and saves UGX 10,000 using mock MTN MoMo.
-
-The system updates the user's savings balance and group savings progress. The user completes clean cooking and LPG safety learning. After reaching the LPG savings target, the user requests LPG delivery. The delivery status changes from Pending to In Transit to Delivered. After delivery is completed, the household receives an Enkola Certificate and earns reward points.
-
-Milestones
-----------
-
-M1: Project Setup and MVP Scope  
-M2: User Journey and System Flow  
-M3: Database Design and ERD  
-M4: Backend API Development  
-M5: Mobile App Interface  
-M6: USSD Flow Simulation  
-M7: Savings Group Feature  
-M8: Mock Payment Flow  
-M9: Learning and Transition Tracking  
-M10: Rewards and Enkola Certificate  
-M11: Ambassador Referral Feature  
-M12: LPG Delivery Tracking  
-M13: Testing and Debugging  
-M14: Documentation and README  
-M15: Final Demo and Presentation
-
-Future Improvements
--------------------
-
-- Real MTN MoMo API integration
-- Real Airtel Money API integration
-- Live USSD deployment
-- SMS notifications
-- Push notifications
-- GPS delivery tracking
-- NGO partner dashboard
-- Carbon credit verification
-- Admin dashboard
-- Supplier dashboard
-
-Project Status
+Database Setup
 --------------
 
-Current phase: MVP planning, setup, and classroom demonstration preparation.
+Run these from the `backend` folder after MySQL is running.
+
+Windows PowerShell:
+
+```powershell
+Get-Content ..\database\schema.sql | mysql -u root -p
+Get-Content ..\database\seed.sql | mysql -u root -p
+```
+
+macOS, Linux, or Git Bash:
+
+```bash
+mysql -u root -p < ../database/schema.sql
+mysql -u root -p < ../database/seed.sql
+```
+
+The schema creates the `embeera_energy` database. The seed file adds demo users, groups, savings transactions, learning progress, rewards, ambassadors, referrals, deliveries, and certificates.
+
+Run The Backend
+---------------
+
+```bash
+cd backend
+npm start
+```
+
+The API runs at:
+
+```text
+http://localhost:5000
+```
+
+Run The Frontend
+----------------
+
+Open a second terminal:
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+For local web testing, open the Expo web option and keep the backend running on port `5000`.
+
+MVP API Routes
+--------------
+
+These routes are backed by MySQL:
+
+- `POST /api/users/register`
+- `POST /api/groups/join`
+- `POST /api/payments/mock`
+- `GET /api/savings/progress/:user_id`
+- `POST /api/learning/update`
+- `GET /api/rewards/:user_id`
+- `POST /api/deliveries/request`
+
+Mock Payment Behavior
+---------------------
+
+`POST /api/payments/mock` is an internal simulation only. It does not call MTN MoMo or Airtel Money. A successful mock payment:
+
+- saves a row in `savings_transactions`
+- marks the transaction as `successful`
+- updates the selected group's `current_amount`
+- lets the frontend reload savings progress from MySQL
+
+Frontend Flow
+-------------
+
+The Expo app in `frontend/App.js` calls the backend for:
+
+- household registration
+- joining an Oluganda Circle
+- mock savings payment
+- savings progress reload
+- learning progress update
+- rewards and Enkola Certificate status
+- LPG delivery request
+
+The app starts with seeded demo user `1`, so it shows data immediately after running `seed.sql`. After registering a new household, the app switches to that new user for group joining, payment, learning, rewards, and delivery requests.

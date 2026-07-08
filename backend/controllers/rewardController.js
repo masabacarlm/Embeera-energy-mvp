@@ -84,7 +84,9 @@ const getUserRewards = async (req, res) => {
     const certificateRequirements = {
       savings_target_reached: savingsTarget > 0 && amountSaved >= savingsTarget,
       learning_completed: completedTopics >= REQUIRED_LEARNING_TOPIC_COUNT,
-      delivery_requested: requestedDeliveries > 0
+      delivery_requested: requestedDeliveries > 0,
+      completed_topics: completedTopics,
+      required_learning_topics: REQUIRED_LEARNING_TOPIC_COUNT
     };
 
     certificateRequirements.certificate_ready =
@@ -95,6 +97,10 @@ const getUserRewards = async (req, res) => {
     res.json({
       user_id: Number(user_id),
       reward_points: Number(rewardRows[0].reward_points),
+      savings: {
+        amount_saved: amountSaved,
+        savings_target: savingsTarget
+      },
       certificate_status: getCertificateStatus(
         certificateRequirements,
         latestCertificateStatus

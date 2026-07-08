@@ -8,11 +8,13 @@ const OLUGANDA_GROUPS = [
   {
     id: 1,
     name: "Mukono Clean Cooking Group",
+    location: "Mukono",
     description: "Members save together toward LPG stove and cylinder purchase."
   },
   {
     id: 2,
     name: "Seeta LPG Savings Circle",
+    location: "Seeta",
     description: "A simple savings circle for households preparing to switch to LPG."
   }
 ];
@@ -21,6 +23,8 @@ const LEARNING_TOPICS = [
   "LPG Safety Tips",
   "Clean Cooking Transition Checklist"
 ];
+const formatCurrency = (value) =>
+  Number(value || 0).toLocaleString();
 const ADMIN_SUMMARY_CARDS = [
   {
     label: "Total households",
@@ -49,6 +53,8 @@ const ADMIN_SUMMARY_CARDS = [
 ];
 
 export default function App() {
+  const [activeUserId, setActiveUserId] = useState(DEMO_USER_ID);
+  const [activeGroupId, setActiveGroupId] = useState(DEMO_GROUP_ID);
   const [savings, setSavings] = useState(null);
   const [rewards, setRewards] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -79,19 +85,21 @@ export default function App() {
   const [demoResetMessage, setDemoResetMessage] = useState("");
 
   const selectedGroup = OLUGANDA_GROUPS.find((group) => group.id === selectedGroupId);
-  const completedTopicCount = completedTopics.length;
+  const rewardRequirements = rewards?.certificate_requirements || {};
+  const completedTopicCount =
+    rewardRequirements.completed_topics ?? completedTopics.length;
   const savingsProgress = Number(savings?.progress_percentage ?? 0);
-  const savingsComplete = savingsProgress >= 100;
-  const learningComplete = completedTopicCount === LEARNING_TOPICS.length;
-  const deliveryRequested = deliveryStatus !== "Not requested";
-  const certificateReady = savingsComplete && learningComplete && deliveryRequested;
-  const certificateStatus = !savingsComplete
-    ? "Not Eligible"
-    : !learningComplete
-      ? "Learning Required"
-      : !deliveryRequested
-        ? "Delivery Required"
-        : "Eligible for Enkola Certificate";
+  const savingsComplete =
+    rewardRequirements.savings_target_reached ?? savingsProgress >= 100;
+  const learningComplete =
+    rewardRequirements.learning_completed ??
+    completedTopicCount === LEARNING_TOPICS.length;
+  const deliveryRequested =
+    rewardRequirements.delivery_requested ?? deliveryStatus !== "Not requested";
+  const certificateReady =
+    rewardRequirements.certificate_ready ??
+    (savingsComplete && learningComplete && deliveryRequested);
+  const certificateStatus = rewards?.certificate_status || "Not Eligible";
   const certificateChecklist = [
     {
       label: "Savings target reached",
@@ -111,10 +119,11 @@ export default function App() {
     }
   ];
 
-  const loadSavingsProgress = async () => {
-    const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/${DEMO_USER_ID}`);
+  const loadSavingsProgress = async (userId = activeUserId) => {
+    const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/${userId}`);
 
     if (!savingsResponse.ok) {
+      setSavings(null);
       throw new Error("Could not load savings progress.");
     }
 
@@ -122,8 +131,8 @@ export default function App() {
     setSavings(savingsData);
   };
 
-  const loadRewards = async () => {
-    const rewardsResponse = await fetch(`${API_BASE_URL}/api/rewards/${DEMO_USER_ID}`);
+  const loadRewards = async (userId = activeUserId) => {
+    const rewardsResponse = await fetch(`${API_BASE_URL}/api/rewards/${userId}`);
 
     if (rewardsResponse.ok) {
       const rewardsData = await rewardsResponse.json();
@@ -148,10 +157,17 @@ export default function App() {
 
   const handleSaveMoney = async () => {
     const paymentAmount = Number(String(amount).replace(/,/g, "").trim());
+    const groupIdForPayment = selectedGroupId;
 
     if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
       setPaymentMessageType("error");
       setPaymentMessage("Enter an amount greater than 0.");
+      return;
+    }
+
+    if (!activeGroupId || activeGroupId !== selectedGroupId) {
+      setPaymentMessageType("error");
+      setPaymentMessage("Join the selected Oluganda Circle before saving money.");
       return;
     }
 
@@ -166,8 +182,8 @@ export default function App() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          user_id: DEMO_USER_ID,
-          group_id: DEMO_GROUP_ID,
+          user_id: activeUserId,
+          group_id: groupIdForPayment,
           amount: paymentAmount,
           payment_method: paymentMethod
         })
@@ -179,8 +195,8 @@ export default function App() {
         throw new Error(paymentData.message || "Payment failed.");
       }
 
-      await loadSavingsProgress();
-      await loadRewards().catch(() => {});
+      await loadSavingsProgress(activeUserId);
+      await loadRewards(activeUserId).catch(() => {});
       setPaymentMessageType("success");
       setPaymentMessage(`Saved UGX ${paymentAmount.toLocaleString()} with ${paymentMethod}.`);
     } catch (error) {
@@ -192,9 +208,11 @@ export default function App() {
   };
 
   const handleResetDemo = async () => {
+    setActiveUserId(DEMO_USER_ID);
+    setActiveGroupId(DEMO_GROUP_ID);
     setRegistrationMessage("");
     setRegistrationMessageType("");
-    setSelectedGroupId(null);
+    setSelectedGroupId(DEMO_GROUP_ID);
     setJoinMessage("");
     setJoinMessageType("");
     setAmount("");
@@ -213,8 +231,8 @@ export default function App() {
     setLoading(true);
 
     try {
-      await loadSavingsProgress();
-      await loadRewards();
+      await loadSavingsProgress(DEMO_USER_ID);
+      await loadRewards(DEMO_USER_ID);
       setDemoResetMessage("Demo reset successfully.");
     } catch (error) {
       setErrorMessage("Could not connect to backend. Make sure backend is running on port 5000.");
@@ -255,7 +273,13 @@ export default function App() {
       }
 
       setRegistrationMessageType("success");
-      setRegistrationMessage("Registration successful.");
+      setRegistrationMessage("Registration successful. You can now join an Oluganda Circle.");
+      setActiveUserId(registrationData.user.user_id);
+      setActiveGroupId(null);
+      setSavings(null);
+      setRewards(null);
+      setCompletedTopics([]);
+      setDeliveryStatus("Not requested");
       setFullName("");
       setPhoneNumber("");
       setLocation("");
@@ -268,6 +292,14 @@ export default function App() {
   };
 
   const handleRequestDelivery = async () => {
+    const groupIdForDelivery = selectedGroupId;
+
+    if (!activeGroupId || activeGroupId !== selectedGroupId) {
+      setDeliveryMessageType("error");
+      setDeliveryMessage("Join the selected Oluganda Circle before requesting delivery.");
+      return;
+    }
+
     setRequestingDelivery(true);
     setDeliveryMessage("");
     setDeliveryMessageType("");
@@ -279,10 +311,10 @@ export default function App() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          user_id: DEMO_USER_ID,
-          group_id: DEMO_GROUP_ID,
+          user_id: activeUserId,
+          group_id: groupIdForDelivery,
           item_name: "LPG Stove and Cylinder",
-          delivery_location: "Mukono"
+          delivery_location: selectedGroup?.location || "Mukono"
         })
       });
 
@@ -293,7 +325,7 @@ export default function App() {
       }
 
       setDeliveryStatus(deliveryData.delivery_status || deliveryData.status || "Pending");
-      await loadRewards().catch(() => {});
+      await loadRewards(activeUserId).catch(() => {});
       setDeliveryMessageType("success");
       setDeliveryMessage(deliveryData.message || "LPG delivery request sent.");
     } catch (error) {
@@ -322,7 +354,7 @@ export default function App() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          user_id: DEMO_USER_ID,
+          user_id: activeUserId,
           group_id: selectedGroupId
         })
       });
@@ -333,7 +365,9 @@ export default function App() {
         throw new Error(joinData.message || "Could not join group.");
       }
 
-      await loadSavingsProgress().catch(() => {});
+      setActiveGroupId(selectedGroupId);
+      await loadSavingsProgress(activeUserId).catch(() => {});
+      await loadRewards(activeUserId).catch(() => {});
       setJoinMessageType("success");
       setJoinMessage(joinData.message || `Joined ${selectedGroup?.name || "Oluganda Circle"} successfully.`);
     } catch (error) {
@@ -356,7 +390,7 @@ export default function App() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          user_id: DEMO_USER_ID,
+          user_id: activeUserId,
           topic_name: topicName,
           completion_status: "completed"
         })
@@ -380,7 +414,7 @@ export default function App() {
           ? `Learning completed. ${nextCompletedTopicCount} of ${LEARNING_TOPICS.length} topics completed.`
           : `${topicName} completed. ${nextCompletedTopicCount} of ${LEARNING_TOPICS.length} topics completed.`
       );
-      await loadRewards().catch(() => {});
+      await loadRewards(activeUserId).catch(() => {});
     } catch (error) {
       setLearningMessageType("error");
       setLearningMessage(error.message || "Could not update learning progress. Make sure backend is running.");
@@ -465,10 +499,11 @@ export default function App() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Savings Progress</Text>
-        <Text>Amount Saved: UGX {savings?.amount_saved ?? "80,000"}</Text>
-        <Text>Savings Target: UGX {savings?.savings_target ?? "250,000"}</Text>
-        <Text>Progress: {savings?.progress_percentage ?? "32"}%</Text>
-        <Text>Remaining: UGX {savings?.remaining_amount ?? "170,000"}</Text>
+        <Text>Active User ID: {activeUserId}</Text>
+        <Text>Amount Saved: UGX {formatCurrency(savings?.amount_saved)}</Text>
+        <Text>Savings Target: UGX {formatCurrency(savings?.savings_target)}</Text>
+        <Text>Progress: {savings?.progress_percentage ?? 0}%</Text>
+        <Text>Remaining: UGX {formatCurrency(savings?.remaining_amount)}</Text>
       </View>
 
       <View style={styles.card}>
@@ -629,7 +664,7 @@ export default function App() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Rewards and Enkola Certificate</Text>
-        <Text>Reward Points: {rewards?.reward_points ?? "120"}</Text>
+        <Text>Reward Points: {rewards?.reward_points ?? 0}</Text>
         <Text style={styles.certificateStatus}>Certificate Status: {certificateStatus}</Text>
         <View style={styles.checklist}>
           {certificateChecklist.map((item) => (
@@ -645,7 +680,7 @@ export default function App() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>LPG Delivery Tracking</Text>
         <Text>Item: LPG Stove and Cylinder</Text>
-        <Text>Location: Mukono</Text>
+        <Text>Location: {selectedGroup?.location || "Mukono"}</Text>
         <Text style={deliveryStatus === "Pending" ? styles.warning : styles.statusText}>
           Status: {deliveryStatus}
         </Text>

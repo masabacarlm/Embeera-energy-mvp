@@ -2,6 +2,10 @@ const db = require("../config/db");
 
 const updateLearningProgress = async (req, res) => {
   const { user_id, topic_name, completion_status } = req.body;
+  const completedAtSql =
+    String(completion_status).toLowerCase() === "completed"
+      ? "CURRENT_TIMESTAMP"
+      : "NULL";
 
   if (!user_id || !topic_name || !completion_status) {
     return res.status(400).json({
@@ -21,7 +25,7 @@ const updateLearningProgress = async (req, res) => {
     if (existingRows.length > 0) {
       await db.execute(
         `UPDATE learning_progress
-         SET completion_status = ?, completed_at = CURRENT_TIMESTAMP
+         SET completion_status = ?, completed_at = ${completedAtSql}
          WHERE learning_id = ?`,
         [completion_status, existingRows[0].learning_id]
       );
@@ -29,7 +33,7 @@ const updateLearningProgress = async (req, res) => {
       await db.execute(
         `INSERT INTO learning_progress
          (user_id, topic_name, completion_status, completed_at)
-         VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+         VALUES (?, ?, ?, ${completedAtSql})`,
         [user_id, topic_name, completion_status]
       );
     }

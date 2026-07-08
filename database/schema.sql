@@ -25,6 +25,7 @@ CREATE TABLE group_members (
     group_id INT,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     member_status VARCHAR(50) DEFAULT 'active',
+    UNIQUE KEY unique_group_member (user_id, group_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (group_id) REFERENCES oluganda_groups(group_id)
 );
