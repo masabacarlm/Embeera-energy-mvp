@@ -64,14 +64,14 @@ Create delivery tracking for LPG stoves and cylinders, including Pending, In Tra
 M13: Testing and Debugging
 --------------------------
 
-Test all MVP features, fix errors, confirm API responses, test UI screens, and ensure the demo flow works.
+Test all MVP features, fix errors, confirm API responses, test UI screens, and ensure the user flow works.
 
 M14: Documentation and README
 -----------------------------
 
 Write the project README, setup instructions, API documentation, database guide, team roles, and explanation of how the MVP works.
 
-M15: Final Demo and Presentation
---------------------------------
+M15: Final MVP Walkthrough
+--------------------------
 
-Prepare the final demo story, screenshots, pitch explanation, and presentation showing how Embeera Energy helps households save together and transition to LPG.
+Prepare the final MVP user story, screenshots, pitch explanation, and walkthrough showing how Embeera Energy helps households save together and transition to LPG.

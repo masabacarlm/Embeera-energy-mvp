@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Pressable } from "react-native";
 
 const API_BASE_URL = "http://localhost:5000";
-const DEMO_USER_ID = 1;
-const DEMO_GROUP_ID = 1;
+const SEEDED_USER_ID = 1;
+const SEEDED_GROUP_ID = 1;
 const OLUGANDA_GROUPS = [
   {
     id: 1,
@@ -25,38 +25,12 @@ const LEARNING_TOPICS = [
 ];
 const formatCurrency = (value) =>
   Number(value || 0).toLocaleString();
-const ADMIN_SUMMARY_CARDS = [
-  {
-    label: "Total households",
-    value: "3"
-  },
-  {
-    label: "Active Oluganda Circles",
-    value: "2"
-  },
-  {
-    label: "Total savings recorded",
-    value: "UGX 130,000"
-  },
-  {
-    label: "Pending deliveries",
-    value: "1"
-  },
-  {
-    label: "Certificates issued",
-    value: "0"
-  },
-  {
-    label: "Active ambassadors",
-    value: "1"
-  }
-];
-
 export default function App() {
-  const [activeUserId, setActiveUserId] = useState(DEMO_USER_ID);
-  const [activeGroupId, setActiveGroupId] = useState(DEMO_GROUP_ID);
+  const [activeUserId, setActiveUserId] = useState(SEEDED_USER_ID);
+  const [activeGroupId, setActiveGroupId] = useState(SEEDED_GROUP_ID);
   const [savings, setSavings] = useState(null);
   const [rewards, setRewards] = useState(null);
+  const [adminOverview, setAdminOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [amount, setAmount] = useState("10000");
@@ -74,7 +48,7 @@ export default function App() {
   const [deliveryMessage, setDeliveryMessage] = useState("");
   const [deliveryMessageType, setDeliveryMessageType] = useState("");
   const [requestingDelivery, setRequestingDelivery] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState(DEMO_GROUP_ID);
+  const [selectedGroupId, setSelectedGroupId] = useState(SEEDED_GROUP_ID);
   const [joinMessage, setJoinMessage] = useState("");
   const [joinMessageType, setJoinMessageType] = useState("");
   const [joiningGroup, setJoiningGroup] = useState(false);
@@ -82,7 +56,7 @@ export default function App() {
   const [learningMessage, setLearningMessage] = useState("");
   const [learningMessageType, setLearningMessageType] = useState("");
   const [savingTopic, setSavingTopic] = useState("");
-  const [demoResetMessage, setDemoResetMessage] = useState("");
+  const [refreshMessage, setRefreshMessage] = useState("");
 
   const selectedGroup = OLUGANDA_GROUPS.find((group) => group.id === selectedGroupId);
   const rewardRequirements = rewards?.certificate_requirements || {};
@@ -118,6 +92,32 @@ export default function App() {
       completed: certificateReady
     }
   ];
+  const adminSummaryCards = [
+    {
+      label: "Total households",
+      value: adminOverview?.total_households ?? "-"
+    },
+    {
+      label: "Active Oluganda Circles",
+      value: adminOverview?.active_groups ?? "-"
+    },
+    {
+      label: "Total savings recorded",
+      value: `UGX ${formatCurrency(adminOverview?.total_savings)}`
+    },
+    {
+      label: "Pending deliveries",
+      value: adminOverview?.pending_deliveries ?? "-"
+    },
+    {
+      label: "Certificates issued",
+      value: adminOverview?.certificates_issued ?? "-"
+    },
+    {
+      label: "Active ambassadors",
+      value: adminOverview?.active_ambassadors ?? "-"
+    }
+  ];
 
   const loadSavingsProgress = async (userId = activeUserId) => {
     const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/${userId}`);
@@ -140,11 +140,21 @@ export default function App() {
     }
   };
 
+  const loadAdminOverview = async () => {
+    const adminResponse = await fetch(`${API_BASE_URL}/api/admin/overview`);
+
+    if (adminResponse.ok) {
+      const adminData = await adminResponse.json();
+      setAdminOverview(adminData);
+    }
+  };
+
   useEffect(() => {
     async function loadDashboardData() {
       try {
         await loadSavingsProgress();
         await loadRewards();
+        await loadAdminOverview();
       } catch (error) {
         setErrorMessage("Could not connect to backend. Make sure backend is running on port 5000.");
       } finally {
@@ -197,6 +207,7 @@ export default function App() {
 
       await loadSavingsProgress(activeUserId);
       await loadRewards(activeUserId).catch(() => {});
+      await loadAdminOverview().catch(() => {});
       setPaymentMessageType("success");
       setPaymentMessage(`Saved UGX ${paymentAmount.toLocaleString()} with ${paymentMethod}.`);
     } catch (error) {
@@ -207,12 +218,12 @@ export default function App() {
     }
   };
 
-  const handleResetDemo = async () => {
-    setActiveUserId(DEMO_USER_ID);
-    setActiveGroupId(DEMO_GROUP_ID);
+  const handleRefreshSeededData = async () => {
+    setActiveUserId(SEEDED_USER_ID);
+    setActiveGroupId(SEEDED_GROUP_ID);
     setRegistrationMessage("");
     setRegistrationMessageType("");
-    setSelectedGroupId(DEMO_GROUP_ID);
+    setSelectedGroupId(SEEDED_GROUP_ID);
     setJoinMessage("");
     setJoinMessageType("");
     setAmount("");
@@ -227,13 +238,14 @@ export default function App() {
     setDeliveryMessage("");
     setDeliveryMessageType("");
     setErrorMessage("");
-    setDemoResetMessage("");
+    setRefreshMessage("");
     setLoading(true);
 
     try {
-      await loadSavingsProgress(DEMO_USER_ID);
-      await loadRewards(DEMO_USER_ID);
-      setDemoResetMessage("Demo reset successfully.");
+      await loadSavingsProgress(SEEDED_USER_ID);
+      await loadRewards(SEEDED_USER_ID);
+      await loadAdminOverview();
+      setRefreshMessage("Seeded household view refreshed.");
     } catch (error) {
       setErrorMessage("Could not connect to backend. Make sure backend is running on port 5000.");
     } finally {
@@ -283,6 +295,7 @@ export default function App() {
       setFullName("");
       setPhoneNumber("");
       setLocation("");
+      await loadAdminOverview().catch(() => {});
     } catch (error) {
       setRegistrationMessageType("error");
       setRegistrationMessage(error.message || "Registration failed. Make sure backend is running.");
@@ -326,6 +339,7 @@ export default function App() {
 
       setDeliveryStatus(deliveryData.delivery_status || deliveryData.status || "Pending");
       await loadRewards(activeUserId).catch(() => {});
+      await loadAdminOverview().catch(() => {});
       setDeliveryMessageType("success");
       setDeliveryMessage(deliveryData.message || "LPG delivery request sent.");
     } catch (error) {
@@ -368,6 +382,7 @@ export default function App() {
       setActiveGroupId(selectedGroupId);
       await loadSavingsProgress(activeUserId).catch(() => {});
       await loadRewards(activeUserId).catch(() => {});
+      await loadAdminOverview().catch(() => {});
       setJoinMessageType("success");
       setJoinMessage(joinData.message || `Joined ${selectedGroup?.name || "Oluganda Circle"} successfully.`);
     } catch (error) {
@@ -431,11 +446,11 @@ export default function App() {
         <Text style={styles.headerText}>
           Community-powered clean energy savings for Ugandan households.
         </Text>
-        <TouchableOpacity style={styles.resetButton} onPress={handleResetDemo}>
-          <Text style={styles.resetButtonText}>Reset Demo</Text>
+        <TouchableOpacity style={styles.resetButton} onPress={handleRefreshSeededData}>
+          <Text style={styles.resetButtonText}>Refresh Seeded Household</Text>
         </TouchableOpacity>
-        {demoResetMessage !== "" && (
-          <Text style={styles.resetMessage}>{demoResetMessage}</Text>
+        {refreshMessage !== "" && (
+          <Text style={styles.resetMessage}>{refreshMessage}</Text>
         )}
       </View>
 
@@ -454,7 +469,7 @@ export default function App() {
       )}
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Household Registration</Text>
+        <Text style={styles.cardTitle}>User Registration</Text>
         <Text style={styles.label}>Full Name</Text>
         <TextInput
           style={styles.input}
@@ -507,7 +522,7 @@ export default function App() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Oluganda Circle</Text>
+        <Text style={styles.cardTitle}>Oluganda Circle Joining</Text>
         <Text style={styles.label}>Choose a group</Text>
         <View style={styles.groupList}>
           {OLUGANDA_GROUPS.map((group) => (
@@ -561,7 +576,7 @@ export default function App() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Mock Payment</Text>
+        <Text style={styles.cardTitle}>Save Money</Text>
         <Text style={styles.label}>Amount to save</Text>
         <TextInput
           style={styles.input}
@@ -703,12 +718,12 @@ export default function App() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Admin Dashboard</Text>
+        <Text style={styles.cardTitle}>Admin Overview</Text>
         <Text style={styles.adminNote}>
-          Admin dashboard placeholder for managing households, savings groups, deliveries, ambassadors, and certificates.
+          Live MySQL summary for households, Oluganda Circles, savings, deliveries, ambassadors, and certificates.
         </Text>
         <View style={styles.adminSummaryGrid}>
-          {ADMIN_SUMMARY_CARDS.map((item) => (
+          {adminSummaryCards.map((item) => (
             <View key={item.label} style={styles.adminSummaryCard}>
               <Text style={styles.adminSummaryValue}>{item.value}</Text>
               <Text style={styles.adminSummaryLabel}>{item.label}</Text>

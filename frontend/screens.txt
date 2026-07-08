@@ -1,7 +1,7 @@
-Embeera Energy Mobile App Demo Screens
-======================================
+Embeera Energy Mobile App Screens
+=================================
 
-This classroom demo is implemented in frontend/App.js as one simple scrollable
+This MVP interface is implemented in frontend/App.js as one simple scrollable
 React Native Expo screen. Complex navigation is intentionally not included yet.
 
 1. Welcome Screen
@@ -13,12 +13,12 @@ Content:
 - Embeera Energy MVP badge
 - Tagline: Saving Together. Living Better.
 - Short clean cooking explanation
-- Register and Login demo buttons
+- Registration controls
 
-2. Registration Screen Placeholder
+2. Registration Screen
 
 Purpose:
-Shows what a future household registration form will collect.
+Collects household registration details.
 
 Content:
 - Full name
@@ -50,16 +50,16 @@ Content:
 - Total circle savings
 - Shared LPG starter kit goal
 
-5. Mock Payment Screen
+5. Save Money Screen
 
 Purpose:
-Demonstrates a simple mobile money savings payment.
+Runs a local simulated mobile money savings payment.
 
 Content:
-- Demo amount
+- Savings amount
 - MTN MoMo option
 - Airtel Money option
-- Successful demo transaction status
+- Successful transaction status
 
 6. Learning and LPG Safety Screen
 

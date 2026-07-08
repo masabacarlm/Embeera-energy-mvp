@@ -4,7 +4,7 @@ Embeera Energy API Routes
 Purpose
 -------
 
-This document lists the planned backend API routes for the Embeera Energy MVP.
+This document lists the backend API routes for the Embeera Energy MVP.
 
 The backend supports user registration, Oluganda Circle group joining, savings tracking, mock mobile money payments, rewards, ambassador referrals, and LPG delivery tracking.
 
@@ -164,19 +164,61 @@ Sample Request Body:
 Expected Response:
 LPG delivery request created
 
-8. Future API Routes
+8. Learning Progress
 --------------------
+
+Method:
+POST
+
+Route:
+/api/learning/update
+
+Purpose:
+Saves a user's learning topic completion status.
+
+Sample Request Body:
+
+{
+  "user_id": 1,
+  "topic_name": "Benefits of LPG",
+  "completion_status": "completed"
+}
+
+Expected Response:
+Learning progress updated
+
+9. Admin Overview
+-----------------
+
+Method:
+GET
+
+Route:
+/api/admin/overview
+
+Purpose:
+Returns local MVP operating metrics for the admin overview.
+
+Expected Response:
+- Total households
+- Active groups
+- Total savings
+- Pending deliveries
+- Certificates issued
+- Active ambassadors
+
+10. Future API Routes
+---------------------
 
 These routes can be added later:
 
 POST /api/groups/create
 GET /api/groups/:group_id
 POST /api/savings/add
-POST /api/learning/update
 POST /api/ambassadors/referral
 GET /api/deliveries/:user_id
 
 Conclusion
 ----------
 
-These API routes support the Embeera Energy MVP demo by connecting users, savings groups, mock payments, rewards, and LPG delivery tracking.
+These API routes support the Embeera Energy MVP by connecting users, savings groups, mock payments, learning, rewards, LPG delivery tracking, and admin overview metrics.

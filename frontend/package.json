@@ -1,7 +1,7 @@
 {
   "name": "embeera-energy-frontend",
   "version": "1.0.0",
-  "description": "React Native frontend placeholder for Embeera Energy MVP",
+  "description": "React Native Expo frontend for Embeera Energy MVP",
   "main": "index.js",
   "scripts": {
     "start": "expo start"

@@ -92,4 +92,4 @@ Passed
 Conclusion
 ----------
 
-The basic Embeera Energy backend routes are working for the MVP classroom demonstration.
+The basic Embeera Energy backend routes are working for local MVP testing.

@@ -9,6 +9,7 @@ const savingsRoutes = require("./routes/savingsRoutes");
 const rewardRoutes = require("./routes/rewardRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
 const learningRoutes = require("./routes/learningRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/savings", savingsRoutes);
 app.use("/api/rewards", rewardRoutes);
 app.use("/api/deliveries", deliveryRoutes);
 app.use("/api/learning", learningRoutes);
+app.use("/api/admin", adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 

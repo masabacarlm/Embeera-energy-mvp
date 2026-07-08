@@ -76,7 +76,7 @@ mysql -u root -p < ../database/schema.sql
 mysql -u root -p < ../database/seed.sql
 ```
 
-The schema creates the `embeera_energy` database. The seed file adds demo users, groups, savings transactions, learning progress, rewards, ambassadors, referrals, deliveries, and certificates.
+The schema creates the `embeera_energy` database. The seed file adds starter users, groups, savings transactions, learning progress, rewards, ambassadors, referrals, deliveries, and certificates.
 
 Run The Backend
 ---------------
@@ -105,6 +105,13 @@ npm start
 
 For local web testing, open the Expo web option and keep the backend running on port `5000`.
 
+Local URLs:
+
+```text
+Backend: http://localhost:5000
+Frontend: http://localhost:8081 or the Expo web URL shown in your terminal
+```
+
 MVP API Routes
 --------------
 
@@ -117,6 +124,7 @@ These routes are backed by MySQL:
 - `POST /api/learning/update`
 - `GET /api/rewards/:user_id`
 - `POST /api/deliveries/request`
+- `GET /api/admin/overview`
 
 Mock Payment Behavior
 ---------------------
@@ -140,5 +148,6 @@ The Expo app in `frontend/App.js` calls the backend for:
 - learning progress update
 - rewards and Enkola Certificate status
 - LPG delivery request
+- admin overview metrics
 
-The app starts with seeded demo user `1`, so it shows data immediately after running `seed.sql`. After registering a new household, the app switches to that new user for group joining, payment, learning, rewards, and delivery requests.
+The app starts with seeded household user `1`, so it shows data immediately after running `seed.sql`. After registering a new household, the app switches to that new user for group joining, payment, learning, rewards, and delivery requests.

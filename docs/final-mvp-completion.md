@@ -14,7 +14,7 @@ Saving Together. Living Better.
 Final MVP Status
 ----------------
 
-The Embeera Energy classroom MVP is complete for demonstration.
+The Embeera Energy MVP is complete as a local running application.
 
 Completed Features
 ------------------
@@ -35,7 +35,7 @@ A GitHub Project board was created with:
 
 3. Milestones
 
-Fifteen milestones were created to guide the project from setup to final demo.
+Fifteen milestones were created to guide the project from setup to final MVP completion.
 
 4. Backend
 
@@ -47,8 +47,10 @@ Backend includes routes for:
 - Oluganda Circle joining
 - Mock payment
 - Savings progress
+- Learning progress
 - Rewards
 - LPG delivery request
+- Admin overview
 
 5. Database
 
@@ -78,10 +80,11 @@ The frontend includes:
 - Learning and LPG safety section
 - Rewards and Enkola Certificate section
 - LPG delivery tracking section
+- Admin overview section
 
 7. Frontend and Backend Connection
 
-The frontend connects to the backend API and displays savings progress from the backend.
+The frontend connects to the backend API and displays savings progress, rewards, delivery status, and admin overview data from MySQL.
 
 8. Mock Payment
 
@@ -89,7 +92,7 @@ The MVP supports a mock savings payment flow for MTN MoMo and Airtel Money.
 
 9. LPG Delivery Request
 
-The MVP supports an LPG delivery request demo flow.
+The MVP supports an LPG delivery request flow.
 
 10. Documentation
 
@@ -100,13 +103,13 @@ The docs folder includes:
 - USSD flow
 - ERD notes
 - Milestones
-- Demo story
+- MVP user story
 - Testing results
 - Project status
 - Submission evidence
 
-Final Demo Flow
----------------
+MVP Flow
+--------
 
 Register User
 ? View Savings Progress
@@ -119,4 +122,4 @@ Register User
 Conclusion
 ----------
 
-The Embeera Energy MVP is ready for classroom demonstration. It shows how Ugandan households can join Oluganda Circles, save toward LPG equipment, track progress, receive clean cooking education, earn rewards, and request LPG delivery.
+The Embeera Energy MVP is ready for local testing. It shows how Ugandan households can join Oluganda Circles, save toward LPG equipment, track progress, receive clean cooking education, earn rewards, and request LPG delivery.
