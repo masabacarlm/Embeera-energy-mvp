@@ -4,7 +4,9 @@ USE embeera_energy;
 CREATE TABLE users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
-    phone_number VARCHAR(20) UNIQUE NOT NULL,
+    phone_number VARCHAR(20) UNIQUE,
+    email VARCHAR(150) UNIQUE,
+    password VARCHAR(100),
     location VARCHAR(100),
     user_type VARCHAR(50) DEFAULT 'household',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

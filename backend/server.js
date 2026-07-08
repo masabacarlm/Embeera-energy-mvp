@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
+const authRoutes = require("./routes/authRoutes");
 const groupRoutes = require("./routes/groupRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const savingsRoutes = require("./routes/savingsRoutes");
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
   res.send("Embeera Energy Backend is running");
 });
 
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/payments", paymentRoutes);

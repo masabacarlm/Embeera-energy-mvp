@@ -22,6 +22,84 @@ textarea {
   min-height: 100vh;
 }
 
+.login-page {
+  align-items: center;
+  display: flex;
+  min-height: 100vh;
+  padding: 32px 16px;
+}
+
+.login-panel {
+  align-items: stretch;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+  margin: 0 auto;
+  max-width: 1040px;
+  width: 100%;
+}
+
+.login-copy {
+  background: #174d3f;
+  border-radius: 8px;
+  color: #fffdf7;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 36px;
+}
+
+.login-copy h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  margin-bottom: 12px;
+}
+
+.login-copy p:last-child {
+  color: #e8f0de;
+  font-size: 1.05rem;
+  margin: 0;
+  max-width: 620px;
+}
+
+.login-card {
+  border: 1px solid #e1ddd1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 28px rgba(32, 42, 37, 0.08) !important;
+}
+
+.quick-login {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.credentials-list {
+  background: #fbfaf5;
+  border: 1px solid #ebe5d9;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.credential-row {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 0.8fr 1.5fr 1fr;
+  padding: 8px 0;
+}
+
+.credential-row + .credential-row {
+  border-top: 1px solid #eee8dc;
+}
+
+.credential-row span {
+  color: #5e6b64;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
 .app-navbar {
   background: #fffdf7;
   border-bottom: 1px solid #e0dbcd;
@@ -43,6 +121,11 @@ textarea {
   background: #e8f0de !important;
   color: #315c31 !important;
   font-weight: 700;
+}
+
+.topbar-user {
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .dashboard-intro {
@@ -302,6 +385,46 @@ textarea {
   line-height: 1.1;
 }
 
+.admin-metric-large {
+  min-height: 118px;
+  justify-content: center;
+}
+
+.admin-metric-large strong {
+  font-size: 1.75rem;
+}
+
+.user-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-row {
+  align-items: center;
+  border-bottom: 1px solid #eee8dc;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1.2fr 1.5fr auto 0.9fr;
+  padding: 12px 0;
+}
+
+.user-row:last-child {
+  border-bottom: 0;
+}
+
+.user-row span {
+  color: #5e6b64;
+  overflow-wrap: anywhere;
+}
+
+.support-note {
+  background: #fbfaf5;
+  border: 1px solid #e3ddcf;
+  border-radius: 8px;
+  color: #21362f;
+  padding: 13px 14px;
+}
+
 .MuiButton-contained {
   background-color: #248057 !important;
   box-shadow: none !important;
@@ -325,6 +448,19 @@ textarea {
 }
 
 @media (max-width: 767px) {
+  .login-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .login-copy {
+    padding: 24px;
+  }
+
+  .credential-row,
+  .user-row {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-intro {
     padding: 20px;
   }
