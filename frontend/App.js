@@ -121,11 +121,12 @@ export default function App() {
         body: JSON.stringify({
           full_name: fullName,
           phone_number: phoneNumber,
-          location
+          location,
+          user_type: "household"
         })
       });
 
-      const registrationData = await registrationResponse.json();
+      const registrationData = await registrationResponse.json().catch(() => ({}));
 
       if (!registrationResponse.ok) {
         throw new Error(registrationData.message || "Registration failed.");
