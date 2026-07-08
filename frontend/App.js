@@ -21,6 +21,32 @@ const LEARNING_TOPICS = [
   "LPG Safety Tips",
   "Clean Cooking Transition Checklist"
 ];
+const ADMIN_SUMMARY_CARDS = [
+  {
+    label: "Total households",
+    value: "3"
+  },
+  {
+    label: "Active Oluganda Circles",
+    value: "2"
+  },
+  {
+    label: "Total savings recorded",
+    value: "UGX 130,000"
+  },
+  {
+    label: "Pending deliveries",
+    value: "1"
+  },
+  {
+    label: "Certificates issued",
+    value: "0"
+  },
+  {
+    label: "Active ambassadors",
+    value: "1"
+  }
+];
 
 export default function App() {
   const [savings, setSavings] = useState(null);
@@ -595,6 +621,21 @@ export default function App() {
           </Text>
         )}
       </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Admin Dashboard</Text>
+        <Text style={styles.adminNote}>
+          Admin dashboard placeholder for managing households, savings groups, deliveries, ambassadors, and certificates.
+        </Text>
+        <View style={styles.adminSummaryGrid}>
+          {ADMIN_SUMMARY_CARDS.map((item) => (
+            <View key={item.label} style={styles.adminSummaryCard}>
+              <Text style={styles.adminSummaryValue}>{item.value}</Text>
+              <Text style={styles.adminSummaryLabel}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -813,5 +854,29 @@ const styles = StyleSheet.create({
   },
   topicStatusText: {
     color: "#24424A"
+  },
+  adminNote: {
+    color: "#24424A",
+    marginBottom: 12
+  },
+  adminSummaryGrid: {
+    gap: 10
+  },
+  adminSummaryCard: {
+    backgroundColor: "#F8FCFE",
+    borderColor: "#B7DDE8",
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12
+  },
+  adminSummaryValue: {
+    color: "#006B8F",
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 4
+  },
+  adminSummaryLabel: {
+    color: "#24424A",
+    fontWeight: "bold"
   }
 });
