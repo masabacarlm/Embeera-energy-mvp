@@ -1,25 +1,42 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, View, Text, StyleSheet } from "react-native";
+import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
 
 const API_BASE_URL = "http://localhost:5000";
+const DEMO_USER_ID = 1;
+const DEMO_GROUP_ID = 1;
 
 export default function App() {
   const [savings, setSavings] = useState(null);
   const [rewards, setRewards] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [amount, setAmount] = useState("10000");
+  const [paymentMethod, setPaymentMethod] = useState("MTN MoMo");
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [paymentMessageType, setPaymentMessageType] = useState("");
+  const [savingPayment, setSavingPayment] = useState(false);
+
+  const loadSavingsProgress = async () => {
+    const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/${DEMO_USER_ID}`);
+
+    if (!savingsResponse.ok) {
+      throw new Error("Could not load savings progress.");
+    }
+
+    const savingsData = await savingsResponse.json();
+    setSavings(savingsData);
+  };
 
   useEffect(() => {
     async function loadDashboardData() {
       try {
-        const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/1`);
-        const rewardsResponse = await fetch(`${API_BASE_URL}/api/rewards/1`);
+        await loadSavingsProgress();
 
-        const savingsData = await savingsResponse.json();
-        const rewardsData = await rewardsResponse.json();
-
-        setSavings(savingsData);
-        setRewards(rewardsData);
+        const rewardsResponse = await fetch(`${API_BASE_URL}/api/rewards/${DEMO_USER_ID}`);
+        if (rewardsResponse.ok) {
+          const rewardsData = await rewardsResponse.json();
+          setRewards(rewardsData);
+        }
       } catch (error) {
         setErrorMessage("Could not connect to backend. Make sure backend is running on port 5000.");
       } finally {
@@ -29,6 +46,50 @@ export default function App() {
 
     loadDashboardData();
   }, []);
+
+  const handleSaveMoney = async () => {
+    const paymentAmount = Number(amount);
+
+    if (!paymentAmount || paymentAmount <= 0) {
+      setPaymentMessageType("error");
+      setPaymentMessage("Enter an amount greater than 0.");
+      return;
+    }
+
+    setSavingPayment(true);
+    setPaymentMessage("");
+    setPaymentMessageType("");
+
+    try {
+      const paymentResponse = await fetch(`${API_BASE_URL}/api/payments/mock`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: DEMO_USER_ID,
+          group_id: DEMO_GROUP_ID,
+          amount: paymentAmount,
+          payment_method: paymentMethod
+        })
+      });
+
+      const paymentData = await paymentResponse.json();
+
+      if (!paymentResponse.ok) {
+        throw new Error(paymentData.message || "Payment failed.");
+      }
+
+      await loadSavingsProgress();
+      setPaymentMessageType("success");
+      setPaymentMessage(`Saved UGX ${paymentAmount.toLocaleString()} with ${paymentMethod}.`);
+    } catch (error) {
+      setPaymentMessageType("error");
+      setPaymentMessage(error.message || "Payment failed. Make sure backend is running.");
+    } finally {
+      setSavingPayment(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.page}>
@@ -70,9 +131,53 @@ export default function App() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Mock Payment</Text>
-        <Text>Payment Method: MTN MoMo / Airtel Money</Text>
-        <Text>Sample Payment: UGX 10,000</Text>
-        <Text style={styles.success}>Status: Successful</Text>
+        <Text style={styles.label}>Amount to save</Text>
+        <TextInput
+          style={styles.input}
+          value={amount}
+          onChangeText={setAmount}
+          keyboardType="numeric"
+          placeholder="Enter amount in UGX"
+        />
+
+        <Text style={styles.label}>Payment Method</Text>
+        <View style={styles.methodRow}>
+          {["MTN MoMo", "Airtel Money"].map((method) => (
+            <TouchableOpacity
+              key={method}
+              style={[
+                styles.methodButton,
+                paymentMethod === method && styles.methodButtonSelected
+              ]}
+              onPress={() => setPaymentMethod(method)}
+            >
+              <Text
+                style={[
+                  styles.methodButtonText,
+                  paymentMethod === method && styles.methodButtonTextSelected
+                ]}
+              >
+                {method}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={[styles.saveButton, savingPayment && styles.saveButtonDisabled]}
+          onPress={handleSaveMoney}
+          disabled={savingPayment}
+        >
+          <Text style={styles.saveButtonText}>
+            {savingPayment ? "Saving..." : "Save Money"}
+          </Text>
+        </TouchableOpacity>
+
+        {paymentMessage !== "" && (
+          <Text style={paymentMessageType === "success" ? styles.success : styles.paymentError}>
+            {paymentMessage}
+          </Text>
+        )}
       </View>
 
       <View style={styles.card}>
@@ -147,6 +252,56 @@ const styles = StyleSheet.create({
     color: "#006B8F",
     marginBottom: 8
   },
+  label: {
+    color: "#24424A",
+    fontWeight: "bold",
+    marginBottom: 6,
+    marginTop: 6
+  },
+  input: {
+    backgroundColor: "#F8FCFE",
+    borderColor: "#B7DDE8",
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 10
+  },
+  methodRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12
+  },
+  methodButton: {
+    borderColor: "#006B8F",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10
+  },
+  methodButtonSelected: {
+    backgroundColor: "#006B8F"
+  },
+  methodButtonText: {
+    color: "#006B8F",
+    fontWeight: "bold"
+  },
+  methodButtonTextSelected: {
+    color: "white"
+  },
+  saveButton: {
+    alignItems: "center",
+    backgroundColor: "#168A42",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#8AB99C"
+  },
+  saveButtonText: {
+    color: "white",
+    fontWeight: "bold"
+  },
   errorTitle: {
     fontSize: 20,
     fontWeight: "bold",
@@ -155,6 +310,10 @@ const styles = StyleSheet.create({
   },
   success: {
     color: "#168A42",
+    fontWeight: "bold"
+  },
+  paymentError: {
+    color: "#B00020",
     fontWeight: "bold"
   },
   warning: {
