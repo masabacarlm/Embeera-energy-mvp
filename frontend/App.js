@@ -16,6 +16,11 @@ const OLUGANDA_GROUPS = [
     description: "A simple savings circle for households preparing to switch to LPG."
   }
 ];
+const LEARNING_TOPICS = [
+  "Benefits of LPG",
+  "LPG Safety Tips",
+  "Clean Cooking Transition Checklist"
+];
 
 export default function App() {
   const [savings, setSavings] = useState(null);
@@ -41,8 +46,13 @@ export default function App() {
   const [joinMessage, setJoinMessage] = useState("");
   const [joinMessageType, setJoinMessageType] = useState("");
   const [joiningGroup, setJoiningGroup] = useState(false);
+  const [completedTopics, setCompletedTopics] = useState([]);
+  const [learningMessage, setLearningMessage] = useState("");
+  const [learningMessageType, setLearningMessageType] = useState("");
+  const [savingTopic, setSavingTopic] = useState("");
 
   const selectedGroup = OLUGANDA_GROUPS.find((group) => group.id === selectedGroupId);
+  const completedTopicCount = completedTopics.length;
 
   const loadSavingsProgress = async () => {
     const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/${DEMO_USER_ID}`);
@@ -233,6 +243,43 @@ export default function App() {
     }
   };
 
+  const handleCompleteTopic = async (topicName) => {
+    setSavingTopic(topicName);
+    setLearningMessage("");
+    setLearningMessageType("");
+
+    try {
+      const learningResponse = await fetch(`${API_BASE_URL}/api/learning/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: DEMO_USER_ID,
+          topic_name: topicName,
+          completion_status: "completed"
+        })
+      });
+
+      const learningData = await learningResponse.json().catch(() => ({}));
+
+      if (!learningResponse.ok) {
+        throw new Error(learningData.message || "Could not update learning progress.");
+      }
+
+      setCompletedTopics((currentTopics) =>
+        currentTopics.includes(topicName) ? currentTopics : [...currentTopics, topicName]
+      );
+      setLearningMessageType("success");
+      setLearningMessage(`${topicName} completed.`);
+    } catch (error) {
+      setLearningMessageType("error");
+      setLearningMessage(error.message || "Could not update learning progress. Make sure backend is running.");
+    } finally {
+      setSavingTopic("");
+    }
+  };
+
   return (
     <ScrollView style={styles.page}>
       <View style={styles.header}>
@@ -416,9 +463,52 @@ export default function App() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Learning and LPG Safety</Text>
-        <Text>- Benefits of LPG</Text>
-        <Text>- LPG safety tips</Text>
-        <Text>- Clean cooking transition checklist</Text>
+        <Text style={styles.progressText}>
+          {completedTopicCount} of {LEARNING_TOPICS.length} topics completed
+        </Text>
+
+        <View style={styles.topicList}>
+          {LEARNING_TOPICS.map((topic) => {
+            const isCompleted = completedTopics.includes(topic);
+            const isSaving = savingTopic === topic;
+
+            return (
+              <TouchableOpacity
+                key={topic}
+                style={[
+                  styles.topicButton,
+                  isCompleted && styles.topicButtonCompleted,
+                  isSaving && styles.saveButtonDisabled
+                ]}
+                onPress={() => handleCompleteTopic(topic)}
+                disabled={isCompleted || isSaving}
+              >
+                <Text
+                  style={[
+                    styles.topicButtonText,
+                    isCompleted && styles.topicButtonTextCompleted
+                  ]}
+                >
+                  {isCompleted ? "[x]" : "[ ]"} {topic}
+                </Text>
+                <Text
+                  style={[
+                    styles.topicStatusText,
+                    isCompleted && styles.topicButtonTextCompleted
+                  ]}
+                >
+                  {isSaving ? "Saving..." : isCompleted ? "Completed" : "Mark Complete"}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {learningMessage !== "" && (
+          <Text style={learningMessageType === "success" ? styles.success : styles.paymentError}>
+            {learningMessage}
+          </Text>
+        )}
       </View>
 
       <View style={styles.card}>
@@ -606,5 +696,36 @@ const styles = StyleSheet.create({
     color: "#B36B00",
     fontWeight: "bold",
     marginBottom: 10
+  },
+  progressText: {
+    color: "#24424A",
+    fontWeight: "bold",
+    marginBottom: 10
+  },
+  topicList: {
+    gap: 10,
+    marginBottom: 10
+  },
+  topicButton: {
+    backgroundColor: "#F8FCFE",
+    borderColor: "#B7DDE8",
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12
+  },
+  topicButtonCompleted: {
+    backgroundColor: "#168A42",
+    borderColor: "#168A42"
+  },
+  topicButtonText: {
+    color: "#006B8F",
+    fontWeight: "bold",
+    marginBottom: 4
+  },
+  topicButtonTextCompleted: {
+    color: "white"
+  },
+  topicStatusText: {
+    color: "#24424A"
   }
 });
