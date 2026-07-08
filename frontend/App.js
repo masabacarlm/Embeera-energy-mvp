@@ -164,13 +164,13 @@ export default function App() {
         })
       });
 
-      const deliveryData = await deliveryResponse.json();
+      const deliveryData = await deliveryResponse.json().catch(() => ({}));
 
       if (!deliveryResponse.ok) {
         throw new Error(deliveryData.message || "Delivery request failed.");
       }
 
-      setDeliveryStatus(deliveryData.delivery_status || "Pending");
+      setDeliveryStatus(deliveryData.delivery_status || deliveryData.status || "Pending");
       setDeliveryMessageType("success");
       setDeliveryMessage(deliveryData.message || "LPG delivery request sent.");
     } catch (error) {
