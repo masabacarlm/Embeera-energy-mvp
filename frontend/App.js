@@ -58,9 +58,9 @@ export default function App() {
   }, []);
 
   const handleSaveMoney = async () => {
-    const paymentAmount = Number(amount);
+    const paymentAmount = Number(String(amount).replace(/,/g, "").trim());
 
-    if (!paymentAmount || paymentAmount <= 0) {
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
       setPaymentMessageType("error");
       setPaymentMessage("Enter an amount greater than 0.");
       return;
@@ -84,7 +84,7 @@ export default function App() {
         })
       });
 
-      const paymentData = await paymentResponse.json();
+      const paymentData = await paymentResponse.json().catch(() => ({}));
 
       if (!paymentResponse.ok) {
         throw new Error(paymentData.message || "Payment failed.");
