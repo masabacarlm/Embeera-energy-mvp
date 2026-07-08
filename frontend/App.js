@@ -76,6 +76,7 @@ export default function App() {
   const [learningMessage, setLearningMessage] = useState("");
   const [learningMessageType, setLearningMessageType] = useState("");
   const [savingTopic, setSavingTopic] = useState("");
+  const [demoResetMessage, setDemoResetMessage] = useState("");
 
   const selectedGroup = OLUGANDA_GROUPS.find((group) => group.id === selectedGroupId);
   const completedTopicCount = completedTopics.length;
@@ -190,6 +191,38 @@ export default function App() {
     }
   };
 
+  const handleResetDemo = async () => {
+    setRegistrationMessage("");
+    setRegistrationMessageType("");
+    setSelectedGroupId(null);
+    setJoinMessage("");
+    setJoinMessageType("");
+    setAmount("");
+    setPaymentMethod("MTN MoMo");
+    setPaymentMessage("");
+    setPaymentMessageType("");
+    setCompletedTopics([]);
+    setLearningMessage("");
+    setLearningMessageType("");
+    setSavingTopic("");
+    setDeliveryStatus("Not requested");
+    setDeliveryMessage("");
+    setDeliveryMessageType("");
+    setErrorMessage("");
+    setDemoResetMessage("");
+    setLoading(true);
+
+    try {
+      await loadSavingsProgress();
+      await loadRewards();
+      setDemoResetMessage("Demo reset successfully.");
+    } catch (error) {
+      setErrorMessage("Could not connect to backend. Make sure backend is running on port 5000.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRegister = async () => {
     if (!fullName || !phoneNumber) {
       setRegistrationMessageType("error");
@@ -272,6 +305,12 @@ export default function App() {
   };
 
   const handleJoinGroup = async () => {
+    if (!selectedGroupId) {
+      setJoinMessageType("error");
+      setJoinMessage("Choose an Oluganda Circle before joining.");
+      return;
+    }
+
     setJoiningGroup(true);
     setJoinMessage("");
     setJoinMessageType("");
@@ -358,6 +397,12 @@ export default function App() {
         <Text style={styles.headerText}>
           Community-powered clean energy savings for Ugandan households.
         </Text>
+        <TouchableOpacity style={styles.resetButton} onPress={handleResetDemo}>
+          <Text style={styles.resetButtonText}>Reset Demo</Text>
+        </TouchableOpacity>
+        {demoResetMessage !== "" && (
+          <Text style={styles.resetMessage}>{demoResetMessage}</Text>
+        )}
       </View>
 
       {loading && (
@@ -666,6 +711,23 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 15,
     color: "white"
+  },
+  resetButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "white",
+    borderRadius: 8,
+    marginTop: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10
+  },
+  resetButtonText: {
+    color: "#006B8F",
+    fontWeight: "bold"
+  },
+  resetMessage: {
+    color: "#D7F7FF",
+    fontWeight: "bold",
+    marginTop: 8
   },
   card: {
     backgroundColor: "white",
