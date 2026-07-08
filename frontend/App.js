@@ -22,16 +22,6 @@ const LEARNING_TOPICS = [
   "Clean Cooking Transition Checklist"
 ];
 
-const formatCertificateStatus = (status) => {
-  if (!status) {
-    return "";
-  }
-
-  return String(status)
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-};
-
 export default function App() {
   const [savings, setSavings] = useState(null);
   const [rewards, setRewards] = useState(null);
@@ -63,27 +53,18 @@ export default function App() {
 
   const selectedGroup = OLUGANDA_GROUPS.find((group) => group.id === selectedGroupId);
   const completedTopicCount = completedTopics.length;
-  const savingsComplete =
-    Number(savings?.progress_percentage ?? 0) >= 100 ||
-    rewards?.certificate_requirements?.savings_target_reached === true;
-  const learningComplete =
-    completedTopicCount === LEARNING_TOPICS.length ||
-    rewards?.certificate_requirements?.learning_completed === true;
-  const deliveryRequested =
-    deliveryStatus !== "Not requested" ||
-    rewards?.certificate_requirements?.delivery_requested === true;
-  const backendCertificateStatus = formatCertificateStatus(rewards?.certificate_status);
-  const certificateIssued = backendCertificateStatus === "Issued";
+  const savingsProgress = Number(savings?.progress_percentage ?? 0);
+  const savingsComplete = savingsProgress >= 100;
+  const learningComplete = completedTopicCount === LEARNING_TOPICS.length;
+  const deliveryRequested = deliveryStatus !== "Not requested";
   const certificateReady = savingsComplete && learningComplete && deliveryRequested;
-  const certificateStatus = certificateIssued
-    ? "Issued"
-    : !savingsComplete
-      ? "Not Eligible"
-      : !learningComplete
-        ? "Learning Required"
-        : !deliveryRequested
-          ? "Delivery Required"
-          : "Eligible";
+  const certificateStatus = !savingsComplete
+    ? "Not Eligible"
+    : !learningComplete
+      ? "Learning Required"
+      : !deliveryRequested
+        ? "Delivery Required"
+        : "Eligible for Enkola Certificate";
   const certificateChecklist = [
     {
       label: "Savings target reached",
@@ -94,12 +75,12 @@ export default function App() {
       completed: learningComplete
     },
     {
-      label: "Delivery requested",
+      label: "LPG delivery requested",
       completed: deliveryRequested
     },
     {
       label: "Certificate ready",
-      completed: certificateIssued || certificateReady
+      completed: certificateReady
     }
   ];
 
