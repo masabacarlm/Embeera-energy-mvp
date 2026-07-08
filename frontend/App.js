@@ -21,6 +21,10 @@ export default function App() {
   const [registrationMessage, setRegistrationMessage] = useState("");
   const [registrationMessageType, setRegistrationMessageType] = useState("");
   const [registering, setRegistering] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState("Not requested");
+  const [deliveryMessage, setDeliveryMessage] = useState("");
+  const [deliveryMessageType, setDeliveryMessageType] = useState("");
+  const [requestingDelivery, setRequestingDelivery] = useState(false);
 
   const loadSavingsProgress = async () => {
     const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/${DEMO_USER_ID}`);
@@ -137,6 +141,42 @@ export default function App() {
       setRegistrationMessage(error.message || "Registration failed. Make sure backend is running.");
     } finally {
       setRegistering(false);
+    }
+  };
+
+  const handleRequestDelivery = async () => {
+    setRequestingDelivery(true);
+    setDeliveryMessage("");
+    setDeliveryMessageType("");
+
+    try {
+      const deliveryResponse = await fetch(`${API_BASE_URL}/api/deliveries/request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: DEMO_USER_ID,
+          group_id: DEMO_GROUP_ID,
+          item_name: "LPG Stove and Cylinder",
+          delivery_location: "Mukono"
+        })
+      });
+
+      const deliveryData = await deliveryResponse.json();
+
+      if (!deliveryResponse.ok) {
+        throw new Error(deliveryData.message || "Delivery request failed.");
+      }
+
+      setDeliveryStatus(deliveryData.delivery_status || "Pending");
+      setDeliveryMessageType("success");
+      setDeliveryMessage(deliveryData.message || "LPG delivery request sent.");
+    } catch (error) {
+      setDeliveryMessageType("error");
+      setDeliveryMessage(error.message || "Delivery request failed. Make sure backend is running.");
+    } finally {
+      setRequestingDelivery(false);
     }
   };
 
@@ -290,7 +330,25 @@ export default function App() {
         <Text style={styles.cardTitle}>LPG Delivery Tracking</Text>
         <Text>Item: LPG Stove and Cylinder</Text>
         <Text>Location: Mukono</Text>
-        <Text style={styles.warning}>Status: Pending</Text>
+        <Text style={deliveryStatus === "Pending" ? styles.warning : styles.statusText}>
+          Status: {deliveryStatus}
+        </Text>
+
+        <TouchableOpacity
+          style={[styles.saveButton, requestingDelivery && styles.saveButtonDisabled]}
+          onPress={handleRequestDelivery}
+          disabled={requestingDelivery}
+        >
+          <Text style={styles.saveButtonText}>
+            {requestingDelivery ? "Requesting..." : "Request LPG Delivery"}
+          </Text>
+        </TouchableOpacity>
+
+        {deliveryMessage !== "" && (
+          <Text style={deliveryMessageType === "success" ? styles.success : styles.paymentError}>
+            {deliveryMessage}
+          </Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -409,8 +467,14 @@ const styles = StyleSheet.create({
     color: "#B00020",
     fontWeight: "bold"
   },
+  statusText: {
+    color: "#24424A",
+    fontWeight: "bold",
+    marginBottom: 10
+  },
   warning: {
     color: "#B36B00",
-    fontWeight: "bold"
+    fontWeight: "bold",
+    marginBottom: 10
   }
 });
