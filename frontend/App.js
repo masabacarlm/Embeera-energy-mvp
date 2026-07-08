@@ -15,6 +15,12 @@ export default function App() {
   const [paymentMessage, setPaymentMessage] = useState("");
   const [paymentMessageType, setPaymentMessageType] = useState("");
   const [savingPayment, setSavingPayment] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [location, setLocation] = useState("");
+  const [registrationMessage, setRegistrationMessage] = useState("");
+  const [registrationMessageType, setRegistrationMessageType] = useState("");
+  const [registering, setRegistering] = useState(false);
 
   const loadSavingsProgress = async () => {
     const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/${DEMO_USER_ID}`);
@@ -91,6 +97,49 @@ export default function App() {
     }
   };
 
+  const handleRegister = async () => {
+    if (!fullName || !phoneNumber) {
+      setRegistrationMessageType("error");
+      setRegistrationMessage("Enter full name and phone number.");
+      return;
+    }
+
+    setRegistering(true);
+    setRegistrationMessage("");
+    setRegistrationMessageType("");
+
+    try {
+      const registrationResponse = await fetch(`${API_BASE_URL}/api/users/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          full_name: fullName,
+          phone_number: phoneNumber,
+          location
+        })
+      });
+
+      const registrationData = await registrationResponse.json();
+
+      if (!registrationResponse.ok) {
+        throw new Error(registrationData.message || "Registration failed.");
+      }
+
+      setRegistrationMessageType("success");
+      setRegistrationMessage("Registration successful.");
+      setFullName("");
+      setPhoneNumber("");
+      setLocation("");
+    } catch (error) {
+      setRegistrationMessageType("error");
+      setRegistrationMessage(error.message || "Registration failed. Make sure backend is running.");
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.page}>
       <View style={styles.header}>
@@ -114,6 +163,50 @@ export default function App() {
           <Text>{errorMessage}</Text>
         </View>
       )}
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Household Registration</Text>
+        <Text style={styles.label}>Full Name</Text>
+        <TextInput
+          style={styles.input}
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="Enter full name"
+        />
+
+        <Text style={styles.label}>Phone Number</Text>
+        <TextInput
+          style={styles.input}
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          keyboardType="phone-pad"
+          placeholder="Enter phone number"
+        />
+
+        <Text style={styles.label}>Location</Text>
+        <TextInput
+          style={styles.input}
+          value={location}
+          onChangeText={setLocation}
+          placeholder="Enter location"
+        />
+
+        <TouchableOpacity
+          style={[styles.saveButton, registering && styles.saveButtonDisabled]}
+          onPress={handleRegister}
+          disabled={registering}
+        >
+          <Text style={styles.saveButtonText}>
+            {registering ? "Registering..." : "Register"}
+          </Text>
+        </TouchableOpacity>
+
+        {registrationMessage !== "" && (
+          <Text style={registrationMessageType === "success" ? styles.success : styles.paymentError}>
+            {registrationMessage}
+          </Text>
+        )}
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Savings Progress</Text>
