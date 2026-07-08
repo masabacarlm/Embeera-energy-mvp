@@ -267,11 +267,18 @@ export default function App() {
         throw new Error(learningData.message || "Could not update learning progress.");
       }
 
+      const topicAlreadyCompleted = completedTopics.includes(topicName);
+      const nextCompletedTopicCount = topicAlreadyCompleted ? completedTopicCount : completedTopicCount + 1;
+
       setCompletedTopics((currentTopics) =>
         currentTopics.includes(topicName) ? currentTopics : [...currentTopics, topicName]
       );
       setLearningMessageType("success");
-      setLearningMessage(`${topicName} completed.`);
+      setLearningMessage(
+        nextCompletedTopicCount === LEARNING_TOPICS.length
+          ? "Learning completed. Household is ready for LPG transition."
+          : `${topicName} completed.`
+      );
     } catch (error) {
       setLearningMessageType("error");
       setLearningMessage(error.message || "Could not update learning progress. Make sure backend is running.");
@@ -466,7 +473,6 @@ export default function App() {
         <Text style={styles.progressText}>
           {completedTopicCount} of {LEARNING_TOPICS.length} topics completed
         </Text>
-
         <View style={styles.topicList}>
           {LEARNING_TOPICS.map((topic) => {
             const isCompleted = completedTopics.includes(topic);
