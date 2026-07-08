@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Pressable } from "react-native";
 
 const API_BASE_URL = "http://localhost:5000";
 const DEMO_USER_ID = 1;
@@ -331,8 +331,8 @@ export default function App() {
       setLearningMessageType("success");
       setLearningMessage(
         nextCompletedTopicCount === LEARNING_TOPICS.length
-          ? "Learning completed. Household is ready for LPG transition."
-          : `${topicName} completed.`
+          ? `Learning completed. ${nextCompletedTopicCount} of ${LEARNING_TOPICS.length} topics completed.`
+          : `${topicName} completed. ${nextCompletedTopicCount} of ${LEARNING_TOPICS.length} topics completed.`
       );
       await loadRewards().catch(() => {});
     } catch (error) {
@@ -535,15 +535,17 @@ export default function App() {
             const isSaving = savingTopic === topic;
 
             return (
-              <TouchableOpacity
+              <Pressable
                 key={topic}
-                style={[
+                accessibilityRole="button"
+                style={({ pressed }) => [
                   styles.topicButton,
                   isCompleted && styles.topicButtonCompleted,
-                  isSaving && styles.saveButtonDisabled
+                  isSaving && styles.topicButtonSaving,
+                  pressed && !isSaving && styles.topicButtonPressed
                 ]}
                 onPress={() => handleCompleteTopic(topic)}
-                disabled={isCompleted || isSaving}
+                disabled={isSaving}
               >
                 <Text
                   style={[
@@ -561,7 +563,7 @@ export default function App() {
                 >
                   {isSaving ? "Saving..." : isCompleted ? "Completed" : "Mark Complete"}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>
@@ -806,11 +808,19 @@ const styles = StyleSheet.create({
     borderColor: "#B7DDE8",
     borderRadius: 8,
     borderWidth: 1,
-    padding: 12
+    padding: 14,
+    marginBottom: 2
   },
   topicButtonCompleted: {
     backgroundColor: "#168A42",
     borderColor: "#168A42"
+  },
+  topicButtonSaving: {
+    backgroundColor: "#8AB99C",
+    borderColor: "#8AB99C"
+  },
+  topicButtonPressed: {
+    opacity: 0.75
   },
   topicButtonText: {
     color: "#006B8F",
