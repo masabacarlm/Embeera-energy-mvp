@@ -4,6 +4,18 @@ import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity } from 
 const API_BASE_URL = "http://localhost:5000";
 const DEMO_USER_ID = 1;
 const DEMO_GROUP_ID = 1;
+const OLUGANDA_GROUPS = [
+  {
+    id: 1,
+    name: "Mukono Clean Cooking Group",
+    description: "Members save together toward LPG stove and cylinder purchase."
+  },
+  {
+    id: 2,
+    name: "Seeta LPG Savings Circle",
+    description: "A simple savings circle for households preparing to switch to LPG."
+  }
+];
 
 export default function App() {
   const [savings, setSavings] = useState(null);
@@ -25,6 +37,12 @@ export default function App() {
   const [deliveryMessage, setDeliveryMessage] = useState("");
   const [deliveryMessageType, setDeliveryMessageType] = useState("");
   const [requestingDelivery, setRequestingDelivery] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState(DEMO_GROUP_ID);
+  const [joinMessage, setJoinMessage] = useState("");
+  const [joinMessageType, setJoinMessageType] = useState("");
+  const [joiningGroup, setJoiningGroup] = useState(false);
+
+  const selectedGroup = OLUGANDA_GROUPS.find((group) => group.id === selectedGroupId);
 
   const loadSavingsProgress = async () => {
     const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/${DEMO_USER_ID}`);
@@ -181,6 +199,40 @@ export default function App() {
     }
   };
 
+  const handleJoinGroup = async () => {
+    setJoiningGroup(true);
+    setJoinMessage("");
+    setJoinMessageType("");
+
+    try {
+      const joinResponse = await fetch(`${API_BASE_URL}/api/groups/join`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: DEMO_USER_ID,
+          group_id: selectedGroupId
+        })
+      });
+
+      const joinData = await joinResponse.json().catch(() => ({}));
+
+      if (!joinResponse.ok) {
+        throw new Error(joinData.message || "Could not join group.");
+      }
+
+      await loadSavingsProgress().catch(() => {});
+      setJoinMessageType("success");
+      setJoinMessage(joinData.message || `Joined ${selectedGroup?.name || "Oluganda Circle"} successfully.`);
+    } catch (error) {
+      setJoinMessageType("error");
+      setJoinMessage(error.message || "Could not join group. Make sure backend is running.");
+    } finally {
+      setJoiningGroup(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.page}>
       <View style={styles.header}>
@@ -259,8 +311,56 @@ export default function App() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Oluganda Circle</Text>
-        <Text>Group: Mukono Clean Cooking Group</Text>
-        <Text>Members save together toward LPG stove and cylinder purchase.</Text>
+        <Text style={styles.label}>Choose a group</Text>
+        <View style={styles.groupList}>
+          {OLUGANDA_GROUPS.map((group) => (
+            <TouchableOpacity
+              key={group.id}
+              style={[
+                styles.groupOption,
+                selectedGroupId === group.id && styles.groupOptionSelected
+              ]}
+              onPress={() => {
+                setSelectedGroupId(group.id);
+                setJoinMessage("");
+                setJoinMessageType("");
+              }}
+            >
+              <Text
+                style={[
+                  styles.groupOptionTitle,
+                  selectedGroupId === group.id && styles.groupOptionTitleSelected
+                ]}
+              >
+                {group.name}
+              </Text>
+              <Text
+                style={[
+                  styles.groupOptionText,
+                  selectedGroupId === group.id && styles.groupOptionTextSelected
+                ]}
+              >
+                {group.description}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={[styles.saveButton, joiningGroup && styles.saveButtonDisabled]}
+          onPress={handleJoinGroup}
+          disabled={joiningGroup}
+        >
+          <Text style={styles.saveButtonText}>
+            {joiningGroup ? "Joining..." : "Join Group"}
+          </Text>
+        </TouchableOpacity>
+
+        {joinMessage !== "" && (
+          <Text style={joinMessageType === "success" ? styles.success : styles.paymentError}>
+            {joinMessage}
+          </Text>
+        )}
       </View>
 
       <View style={styles.card}>
@@ -422,6 +522,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     marginBottom: 12
+  },
+  groupList: {
+    gap: 10,
+    marginBottom: 12
+  },
+  groupOption: {
+    backgroundColor: "#F8FCFE",
+    borderColor: "#B7DDE8",
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12
+  },
+  groupOptionSelected: {
+    backgroundColor: "#006B8F",
+    borderColor: "#006B8F"
+  },
+  groupOptionTitle: {
+    color: "#006B8F",
+    fontWeight: "bold",
+    marginBottom: 4
+  },
+  groupOptionTitleSelected: {
+    color: "white"
+  },
+  groupOptionText: {
+    color: "#24424A"
+  },
+  groupOptionTextSelected: {
+    color: "#D7F7FF"
   },
   methodButton: {
     borderColor: "#006B8F",
