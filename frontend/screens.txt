@@ -1,106 +1,68 @@
-Embeera Energy Mobile App Screens
-=================================
+Embeera Energy Web Frontend
+===========================
 
-This MVP interface is implemented in frontend/App.js as one simple scrollable
-React Native Expo screen. Complex navigation is intentionally not included yet.
+This frontend is a React web dashboard served with Vite. The interface uses
+Bootstrap for the responsive container, rows, columns, and spacing, with
+Material UI components for form controls, cards, buttons, alerts, chips, and
+progress indicators.
 
-1. Welcome Screen
+Main dashboard sections
+-----------------------
 
-Purpose:
-Introduces Embeera Energy as a clean cooking savings and health-tech MVP.
+1. Top Navigation
 
-Content:
-- Embeera Energy MVP badge
-- Tagline: Saving Together. Living Better.
-- Short clean cooking explanation
-- Registration controls
+- Embeera Energy brand
+- Mukono status chip
+- Profile refresh action
 
-2. Registration Screen
+2. Household Profile
 
-Purpose:
-Collects household registration details.
+- Amina Nakato
+- Mukono
+- Household size and active Oluganda Circle
+- LPG Stove and Cylinder goal
 
-Content:
-- Full name
-- Phone number
-- District or location
-- Household size
-- Preferred access method: App or USSD
+3. Savings Progress
 
-3. Dashboard Showing Savings Progress
+- UGX amount saved
+- UGX target and remaining balance
+- Progress bar toward the LPG savings goal
 
-Purpose:
-Shows the user's savings journey toward an LPG starter kit.
+4. Oluganda Circle
 
-Content:
-- Amount saved
-- Savings target
-- Progress percentage
-- Simple progress bar
-- Circle, rewards points, and progress summary
+- Mukono Clean Cooking Group
+- Seeta LPG Savings Circle
+- Group joining action using POST /api/groups/join
 
-4. Oluganda Circle Screen
+5. Save Money
 
-Purpose:
-Shows group-based savings for households transitioning to LPG.
+- UGX amount field
+- MTN MoMo and Airtel Money payment options
+- Payment action using POST /api/payments/mock
 
-Content:
-- Circle name
-- Number of members
-- Total circle savings
-- Shared LPG starter kit goal
+6. Learning Checklist
 
-5. Save Money Screen
+- LPG benefits
+- LPG safety tips
+- Clean cooking transition checklist
+- Learning update action using POST /api/learning/update
 
-Purpose:
-Runs a local simulated mobile money savings payment.
+7. Rewards and Enkola Certificate
 
-Content:
-- Savings amount
-- MTN MoMo option
-- Airtel Money option
-- Successful transaction status
-
-6. Learning and LPG Safety Screen
-
-Purpose:
-Teaches clean cooking benefits and safe LPG use.
-
-Content:
-- Ventilation
-- Cylinder storage
-- Leak checks
-- Safe stove use
-- Lesson completion progress
-
-7. Rewards and Enkola Certificate Screen
-
-Purpose:
-Shows incentives for saving, learning, referrals, and safe LPG adoption.
-
-Content:
 - Reward points
-- Referral rewards
-- Savings rewards
-- Enkola Certificate progress
+- Certificate status
+- Certificate readiness checklist
 
-8. LPG Delivery Tracking Screen
+8. LPG Delivery Tracking
 
-Purpose:
-Tracks delivery of the LPG starter kit.
+- LPG Stove and Cylinder delivery request
+- Mukono delivery location
+- Delivery request action using POST /api/deliveries/request
 
-Content:
-- Stove and cylinder delivery
-- Regulator and safety card
-- Delivery status
-- Current delivery stage
+9. Admin Overview
 
-Visual Style
-------------
-
-- Medical blue
-- Teal
-- White background
-- Rounded cards
-- Readable text
-- Simple beginner-friendly React Native code
+- Household count
+- Active Oluganda Circles
+- Savings recorded
+- Pending deliveries
+- Certificates and ambassadors
