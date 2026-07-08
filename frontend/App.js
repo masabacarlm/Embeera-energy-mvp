@@ -22,6 +22,16 @@ const LEARNING_TOPICS = [
   "Clean Cooking Transition Checklist"
 ];
 
+const formatCertificateStatus = (status) => {
+  if (!status) {
+    return "";
+  }
+
+  return String(status)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
 export default function App() {
   const [savings, setSavings] = useState(null);
   const [rewards, setRewards] = useState(null);
@@ -53,6 +63,45 @@ export default function App() {
 
   const selectedGroup = OLUGANDA_GROUPS.find((group) => group.id === selectedGroupId);
   const completedTopicCount = completedTopics.length;
+  const savingsComplete =
+    Number(savings?.progress_percentage ?? 0) >= 100 ||
+    rewards?.certificate_requirements?.savings_target_reached === true;
+  const learningComplete =
+    completedTopicCount === LEARNING_TOPICS.length ||
+    rewards?.certificate_requirements?.learning_completed === true;
+  const deliveryRequested =
+    deliveryStatus !== "Not requested" ||
+    rewards?.certificate_requirements?.delivery_requested === true;
+  const backendCertificateStatus = formatCertificateStatus(rewards?.certificate_status);
+  const certificateIssued = backendCertificateStatus === "Issued";
+  const certificateReady = savingsComplete && learningComplete && deliveryRequested;
+  const certificateStatus = certificateIssued
+    ? "Issued"
+    : !savingsComplete
+      ? "Not Eligible"
+      : !learningComplete
+        ? "Learning Required"
+        : !deliveryRequested
+          ? "Delivery Required"
+          : "Eligible";
+  const certificateChecklist = [
+    {
+      label: "Savings target reached",
+      completed: savingsComplete
+    },
+    {
+      label: "Learning completed",
+      completed: learningComplete
+    },
+    {
+      label: "Delivery requested",
+      completed: deliveryRequested
+    },
+    {
+      label: "Certificate ready",
+      completed: certificateIssued || certificateReady
+    }
+  ];
 
   const loadSavingsProgress = async () => {
     const savingsResponse = await fetch(`${API_BASE_URL}/api/savings/progress/${DEMO_USER_ID}`);
@@ -65,16 +114,20 @@ export default function App() {
     setSavings(savingsData);
   };
 
+  const loadRewards = async () => {
+    const rewardsResponse = await fetch(`${API_BASE_URL}/api/rewards/${DEMO_USER_ID}`);
+
+    if (rewardsResponse.ok) {
+      const rewardsData = await rewardsResponse.json();
+      setRewards(rewardsData);
+    }
+  };
+
   useEffect(() => {
     async function loadDashboardData() {
       try {
         await loadSavingsProgress();
-
-        const rewardsResponse = await fetch(`${API_BASE_URL}/api/rewards/${DEMO_USER_ID}`);
-        if (rewardsResponse.ok) {
-          const rewardsData = await rewardsResponse.json();
-          setRewards(rewardsData);
-        }
+        await loadRewards();
       } catch (error) {
         setErrorMessage("Could not connect to backend. Make sure backend is running on port 5000.");
       } finally {
@@ -119,6 +172,7 @@ export default function App() {
       }
 
       await loadSavingsProgress();
+      await loadRewards().catch(() => {});
       setPaymentMessageType("success");
       setPaymentMessage(`Saved UGX ${paymentAmount.toLocaleString()} with ${paymentMethod}.`);
     } catch (error) {
@@ -199,6 +253,7 @@ export default function App() {
       }
 
       setDeliveryStatus(deliveryData.delivery_status || deliveryData.status || "Pending");
+      await loadRewards().catch(() => {});
       setDeliveryMessageType("success");
       setDeliveryMessage(deliveryData.message || "LPG delivery request sent.");
     } catch (error) {
@@ -279,6 +334,7 @@ export default function App() {
           ? "Learning completed. Household is ready for LPG transition."
           : `${topicName} completed.`
       );
+      await loadRewards().catch(() => {});
     } catch (error) {
       setLearningMessageType("error");
       setLearningMessage(error.message || "Could not update learning progress. Make sure backend is running.");
@@ -520,7 +576,16 @@ export default function App() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Rewards and Enkola Certificate</Text>
         <Text>Reward Points: {rewards?.reward_points ?? "120"}</Text>
-        <Text>Certificate Status: {rewards?.certificate_status ?? "In Progress"}</Text>
+        <Text style={styles.certificateStatus}>Certificate Status: {certificateStatus}</Text>
+        <View style={styles.checklist}>
+          {certificateChecklist.map((item) => (
+            <View key={item.label} style={styles.checklistItem}>
+              <Text style={item.completed ? styles.checklistDone : styles.checklistPending}>
+                {item.completed ? "[x]" : "[ ]"} {item.label}
+              </Text>
+            </View>
+          ))}
+        </View>
       </View>
 
       <View style={styles.card}>
@@ -707,6 +772,30 @@ const styles = StyleSheet.create({
     color: "#24424A",
     fontWeight: "bold",
     marginBottom: 10
+  },
+  certificateStatus: {
+    color: "#24424A",
+    fontWeight: "bold",
+    marginTop: 4,
+    marginBottom: 10
+  },
+  checklist: {
+    gap: 8
+  },
+  checklistItem: {
+    backgroundColor: "#F8FCFE",
+    borderColor: "#B7DDE8",
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 10
+  },
+  checklistDone: {
+    color: "#168A42",
+    fontWeight: "bold"
+  },
+  checklistPending: {
+    color: "#6A7A80",
+    fontWeight: "bold"
   },
   topicList: {
     gap: 10,
