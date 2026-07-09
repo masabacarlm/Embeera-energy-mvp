@@ -17,7 +17,7 @@ const SEEDED_GROUP_ID = 1;
 const TEST_USERS = {
   admin: {
     label: "Admin",
-    email: "admin@embeera.local",
+    email: "masabacarl8@gmail.com",
     password: "admin123"
   },
   household: {

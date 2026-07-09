@@ -1,7 +1,7 @@
 USE embeera_energy;
 
 INSERT INTO users (full_name, phone_number, email, password, location, user_type) VALUES
-('System Admin', '0700000000', 'admin@embeera.local', 'admin123', 'Mukono', 'admin'),
+('Masaba Carl Michael', '0700000000', 'masabacarl8@gmail.com', 'admin123', 'Mukono', 'admin'),
 ('Amina Nakato', '0700000001', 'household@embeera.local', 'household123', 'Mukono', 'household'),
 ('Sarah Namutebi', '0700000003', 'ambassador@embeera.local', 'ambassador123', 'Mukono', 'ambassador'),
 ('John Ssewanyana', '0700000002', NULL, NULL, 'Seeta', 'household');
