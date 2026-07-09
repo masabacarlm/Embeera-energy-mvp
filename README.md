@@ -1,9 +1,9 @@
 Embeera Energy
 ===============
 
-Embeera Energy is a local MVP for a Ugandan clean-energy savings product. It lets a household register, join an Oluganda Circle, make an internal mock savings payment, track savings progress, complete LPG learning, view rewards and certificate status, and request LPG delivery.
+Embeera Energy is a React Web/Vite + Node.js/Express + MySQL MVP for a controlled Ugandan clean-cooking savings pilot. It supports member, ambassador, and admin dashboards, Oluganda Circle household savings records, LPG transition learning, and Enkola Certificate readiness.
 
-This project is local-only. It does not include real MTN MoMo, Airtel Money, live USSD, GPS tracking, or deployment.
+This pilot build is not connected to real mobile money, SMS OTP, or live production infrastructure.
 
 Project Structure
 -----------------
@@ -11,7 +11,7 @@ Project Structure
 ```text
 embeera-energy-mvp/
   backend/      Node.js + Express API
-  frontend/     React Native Expo app
+  frontend/     React Web + Vite app
   database/     MySQL schema and seed data
   docs/         Project notes
 ```
@@ -21,62 +21,39 @@ Requirements
 
 - Node.js and npm
 - MySQL Server
-- Expo CLI through `npm start` in the frontend project
+- Backend `.env` with local database settings
 
 Backend Setup
 -------------
 
-1. Install backend dependencies:
+```bash
+cd backend
+npm install
+```
 
-   ```bash
-   cd backend
-   npm install
-   ```
+Create `backend/.env` with local values:
 
-2. Create a local backend environment file:
+```env
+PORT=5000
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=embeera_energy
+```
 
-   ```bash
-   copy .env.example .env
-   ```
-
-   On macOS or Linux:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-3. Edit `backend/.env` with your own local MySQL details:
-
-   ```env
-   PORT=5000
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASSWORD=your_mysql_password
-   DB_NAME=embeera_energy
-   ```
-
-   Keep real passwords only in `backend/.env`. Do not commit them.
+Do not commit real credentials.
 
 Database Setup
 --------------
 
-Run these from the `backend` folder after MySQL is running.
-
-Windows PowerShell:
+For a fresh local database, run:
 
 ```powershell
 Get-Content ..\database\schema.sql | mysql -u root -p
 Get-Content ..\database\seed.sql | mysql -u root -p
 ```
 
-macOS, Linux, or Git Bash:
-
-```bash
-mysql -u root -p < ../database/schema.sql
-mysql -u root -p < ../database/seed.sql
-```
-
-The schema creates the `embeera_energy` database. The seed file adds starter users, groups, savings transactions, learning progress, rewards, ambassadors, referrals, deliveries, and certificates.
+The current pilot intentionally avoids a risky full migration. Existing mixed old/new tables can remain, but the `users` table must have `phone_number`, `user_type`, and `password` columns.
 
 Run The Backend
 ---------------
@@ -92,6 +69,8 @@ The API runs at:
 http://localhost:5000
 ```
 
+On startup, the backend ensures the controlled-pilot admin account exists and has a bcrypt-hashed password.
+
 Run The Frontend
 ----------------
 
@@ -100,54 +79,82 @@ Open a second terminal:
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
-For local web testing, open the Expo web option and keep the backend running on port `5000`.
-
-Local URLs:
+Vite runs at:
 
 ```text
-Backend: http://localhost:5000
-Frontend: http://localhost:8081 or the Expo web URL shown in your terminal
+http://localhost:5173
 ```
 
-MVP API Routes
+Build The Frontend
+------------------
+
+```bash
+cd frontend
+npm run build
+```
+
+Pilot Login Setup
+-----------------
+
+Admin account:
+
+```text
+Full name: Masaba Carl Michael
+Phone number: 0703188291
+Email: masabacarl8@gmail.com
+Role: admin
+```
+
+The temporary local pilot admin PIN/password is configured server-side and stored as a bcrypt hash. Do not display it in the frontend.
+
+Members and ambassadors register from the frontend with:
+
+- full name
+- phone number
+- location
+- role: member or ambassador
+- secure PIN, minimum 4 characters
+
+Frontend registration must not create admin users.
+
+Authentication
 --------------
 
-These routes are backed by MySQL:
+Sign in requires:
 
-- `POST /api/users/register`
-- `POST /api/groups/join`
-- `POST /api/payments/mock`
-- `GET /api/savings/progress/:user_id`
-- `POST /api/learning/update`
-- `GET /api/rewards/:user_id`
-- `POST /api/deliveries/request`
-- `GET /api/admin/overview`
+- phone number
+- PIN/password
 
-Mock Payment Behavior
----------------------
+Successful login routes users by role:
 
-`POST /api/payments/mock` is an internal simulation only. It does not call MTN MoMo or Airtel Money. A successful mock payment:
+- admin: Admin Dashboard
+- member: Member Dashboard
+- ambassador: Ambassador Dashboard
 
-- saves a row in `savings_transactions`
-- marks the transaction as `successful`
-- updates the selected group's `current_amount`
-- lets the frontend reload savings progress from MySQL
+Dashboards require a valid backend session token. Admin APIs require the admin role.
 
-Frontend Flow
--------------
+Payments
+--------
 
-The Expo app in `frontend/App.js` calls the backend for:
+Payments are sandbox records only. The UI and API label successful contribution recording as:
 
-- household registration
-- joining an Oluganda Circle
-- mock savings payment
-- savings progress reload
-- learning progress update
-- rewards and Enkola Certificate status
-- LPG delivery request
-- admin overview metrics
+```text
+Sandbox payment recorded
+```
 
-The app starts with seeded household user `1`, so it shows data immediately after running `seed.sql`. After registering a new household, the app switches to that new user for group joining, payment, learning, rewards, and delivery requests.
+No real MTN MoMo or Airtel Money credentials are included, and no real money moves.
+
+Production Phase Items
+----------------------
+
+These are still required before a real production launch:
+
+- real SMS OTP or another verified second-factor flow
+- real MTN MoMo and Airtel Money integrations with provider credentials stored securely
+- JWT or server-side session hardening with expiry and revocation
+- formal database migration scripts and backups
+- HTTPS deployment, production CORS origins, logging, monitoring, and incident handling
+- full security review and user acceptance testing

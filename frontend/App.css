@@ -4,11 +4,27 @@
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-body {
+html,
+body,
+#root {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+body {
   background:
-    linear-gradient(180deg, rgba(242, 238, 226, 0.82), rgba(247, 247, 240, 0.95)),
+    radial-gradient(circle at 12% 12%, rgba(241, 194, 125, 0.22), transparent 28%),
+    linear-gradient(180deg, rgba(242, 238, 226, 0.88), rgba(247, 247, 240, 0.96)),
     #f5f2ea;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 button,
@@ -19,14 +35,28 @@ textarea {
 }
 
 .app-shell {
+  background:
+    radial-gradient(circle at 85% 8%, rgba(241, 194, 125, 0.16), transparent 25%),
+    #f5f2ea;
   min-height: 100vh;
+  width: 100%;
+}
+
+.app-container {
+  max-width: 1440px;
+  width: 100%;
+}
+
+.app-main {
+  min-height: calc(100vh - 65px);
 }
 
 .login-page {
   align-items: center;
   display: flex;
   min-height: 100vh;
-  padding: 32px 16px;
+  padding: 32px clamp(16px, 4vw, 56px);
+  width: 100%;
 }
 
 .login-panel {
@@ -35,12 +65,14 @@ textarea {
   gap: 24px;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
   margin: 0 auto;
-  max-width: 1040px;
+  max-width: 1180px;
   width: 100%;
 }
 
 .login-copy {
-  background: #174d3f;
+  background:
+    linear-gradient(145deg, rgba(23, 77, 63, 0.98), rgba(35, 97, 71, 0.96)),
+    #174d3f;
   border-radius: 8px;
   color: #fffdf7;
   display: flex;
@@ -56,11 +88,28 @@ textarea {
   margin-bottom: 12px;
 }
 
-.login-copy p:last-child {
+.login-subtitle {
   color: #e8f0de;
   font-size: 1.05rem;
   margin: 0;
   max-width: 620px;
+}
+
+.login-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.login-highlights span {
+  background: rgba(255, 253, 247, 0.12);
+  border: 1px solid rgba(255, 253, 247, 0.2);
+  border-radius: 999px;
+  color: #fff3dc;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 7px 12px;
 }
 
 .login-card {
@@ -69,41 +118,87 @@ textarea {
   box-shadow: 0 10px 28px rgba(32, 42, 37, 0.08) !important;
 }
 
-.quick-login {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+.login-card .MuiCardContent-root {
+  padding: 28px !important;
 }
 
-.credentials-list {
-  background: #fbfaf5;
-  border: 1px solid #ebe5d9;
+.login-card-heading h2 {
+  color: #21362f;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+}
+
+.login-card-heading p:last-child {
+  color: #65736d;
+  font-size: 0.94rem;
+  margin: 0;
+}
+
+.login-card .MuiButton-contained {
+  background: #174d3f;
+  box-shadow: none;
+  font-weight: 800;
+  text-transform: none;
+}
+
+.login-card .MuiButton-contained:hover {
+  background: #236147;
+  box-shadow: none;
+}
+
+.login-card .MuiFormHelperText-root {
+  color: #65736d;
+  margin-left: 0;
+}
+
+.auth-toggle {
+  background: #f3efe4;
+  border: 1px solid #e2dccf;
   border-radius: 8px;
-  padding: 14px;
-}
-
-.credential-row {
   display: grid;
-  gap: 6px;
-  grid-template-columns: 0.8fr 1.5fr 1fr;
-  padding: 8px 0;
+  gap: 4px;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
 }
 
-.credential-row + .credential-row {
-  border-top: 1px solid #eee8dc;
+.auth-toggle button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #56635e;
+  font-weight: 800;
+  padding: 9px 10px;
 }
 
-.credential-row span {
-  color: #5e6b64;
+.auth-toggle button.active {
+  background: #fffdf7;
+  box-shadow: 0 1px 4px rgba(32, 42, 37, 0.08);
+  color: #174d3f;
+}
+
+.auth-helper {
+  color: #65736d;
   font-size: 0.9rem;
-  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+.session-banner {
+  bottom: 16px;
+  left: 16px;
+  max-width: 420px;
+  position: fixed;
+  right: 16px;
+  z-index: 20;
 }
 
 .app-navbar {
   background: #fffdf7;
   border-bottom: 1px solid #e0dbcd;
   box-shadow: 0 1px 0 rgba(31, 42, 38, 0.04);
+  min-height: 65px;
+  width: 100%;
 }
 
 .navbar-brand {
@@ -258,11 +353,14 @@ textarea {
 }
 
 .circle-option strong,
-.circle-option small {
+.circle-option small,
+.topic-item strong,
+.topic-item small {
   display: block;
 }
 
-.circle-option small {
+.circle-option small,
+.topic-item small {
   color: #69746e;
   font-size: 0.86rem;
   margin-top: 3px;
@@ -324,6 +422,18 @@ textarea {
 .reward-strip strong {
   color: #174d3f;
   font-size: 1.6rem;
+}
+
+.certificate-card {
+  background: #eef7eb;
+  border: 1px solid #9fc994;
+  border-radius: 8px;
+  color: #21362f;
+  padding: 14px;
+}
+
+.certificate-card p {
+  margin: 6px 0 0;
 }
 
 .certificate-row {
@@ -456,7 +566,6 @@ textarea {
     padding: 24px;
   }
 
-  .credential-row,
   .user-row {
     grid-template-columns: 1fr;
   }

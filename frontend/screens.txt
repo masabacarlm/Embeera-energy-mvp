@@ -9,20 +9,21 @@ progress indicators.
 Main dashboard sections
 -----------------------
 
-1. Top Navigation
+1. Authentication
 
 - Embeera Energy brand
-- Mukono status chip
-- Profile refresh action
+- Sign in with phone number
+- Create account with name, phone, location, and role
+- Oluganda Circle clean cooking message
 
-2. Household Profile
+2. Top Navigation
 
-- Amina Nakato
-- Mukono
-- Household size and active Oluganda Circle
-- LPG Stove and Cylinder goal
+- Embeera Energy brand
+- Signed-in user chip
+- Role chip
+- Logout action
 
-3. Savings Progress
+3. Member Dashboard
 
 - UGX amount saved
 - UGX target and remaining balance
@@ -32,32 +33,28 @@ Main dashboard sections
 
 - Mukono Clean Cooking Group
 - Seeta LPG Savings Circle
-- Group joining action using POST /api/groups/join
+- Circle creation and invite-code joining
 
 5. Save Money
 
 - UGX amount field
 - MTN MoMo and Airtel Money payment options
-- Payment action using POST /api/payments/mock
+- Contribution action linked to the active circle
 
 6. Learning Checklist
 
-- LPG benefits
-- LPG safety tips
-- Clean cooking transition checklist
-- Learning update action using POST /api/learning/update
+- Clean LPG readiness lessons
+- Lesson completion action
 
 7. Rewards and Enkola Certificate
 
-- Reward points
 - Certificate status
 - Certificate readiness checklist
 
-8. LPG Delivery Tracking
+8. Ambassador Dashboard
 
-- LPG Stove and Cylinder delivery request
-- Mukono delivery location
-- Delivery request action using POST /api/deliveries/request
+- Referral form
+- Household transition progress
 
 9. Admin Overview
 

@@ -37,7 +37,7 @@ const createMockPayment = async (req, res) => {
       });
     }
 
-    // Record the mock mobile money payment.
+    // Record the sandbox payment only; no real mobile money provider is called.
     const [paymentResult] = await connection.execute(
       `INSERT INTO savings_transactions
        (user_id, group_id, amount, payment_method, transaction_status)
@@ -56,8 +56,8 @@ const createMockPayment = async (req, res) => {
     await connection.commit();
 
     res.status(201).json({
-      message: "Mock payment successful",
-      payment_status: "successful",
+      message: "Sandbox payment recorded",
+      payment_status: "sandbox_recorded",
       payment: {
         transaction_id: paymentResult.insertId,
         user_id,
@@ -70,8 +70,8 @@ const createMockPayment = async (req, res) => {
     if (connection) {
       await connection.rollback();
     }
-    console.error("Mock payment error:", error);
-    res.status(500).json({ message: "Could not save mock payment" });
+    console.error("Sandbox payment error:", error);
+    res.status(500).json({ message: "Could not save sandbox payment" });
   } finally {
     if (connection) {
       connection.release();

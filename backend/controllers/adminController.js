@@ -15,16 +15,16 @@ const getAdminOverview = async (req, res) => {
         db.execute(
           `SELECT COUNT(*) AS total_households
            FROM users
-           WHERE user_type = 'household'`
+           WHERE user_type IN ('member', 'household')`
         ),
         db.execute(
           `SELECT COUNT(*) AS active_groups
-           FROM oluganda_groups`
+           FROM circles`
         ),
         db.execute(
           `SELECT COALESCE(SUM(amount), 0) AS total_savings
-           FROM savings_transactions
-           WHERE transaction_status = 'successful'`
+           FROM contributions
+           WHERE status = 'successful'`
         ),
         db.execute(
           `SELECT COUNT(*) AS pending_deliveries
@@ -38,10 +38,11 @@ const getAdminOverview = async (req, res) => {
         ),
         db.execute(
           `SELECT COUNT(*) AS active_ambassadors
-           FROM ambassadors`
+           FROM users
+           WHERE user_type = 'ambassador'`
         ),
         db.execute(
-          `SELECT user_id, full_name, email, location, user_type, created_at
+          `SELECT user_id, full_name, phone_number, email, location, user_type, created_at
            FROM users
            ORDER BY created_at DESC, user_id DESC
            LIMIT 6`
