@@ -4,7 +4,8 @@
   "description": "Backend API for Embeera Energy MVP",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed:demo": "node scripts/seedDemoProduction.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

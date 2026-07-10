@@ -1,8 +1,11 @@
 const express = require("express");
-const { requestDelivery } = require("../controllers/deliveryController");
+const { getMyDeliveries, requestDelivery } = require("../controllers/deliveryController");
+const { requireAuth } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/request", requestDelivery);
+router.use(requireAuth);
+router.post("/", requestDelivery);
+router.get("/my", getMyDeliveries);
 
 module.exports = router;

@@ -252,10 +252,12 @@ function MemberDashboard({ user, token }) {
   const [activeId, setActiveId] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [certificateStatus, setCertificateStatus] = useState(null);
+  const [deliveries, setDeliveries] = useState([]);
   const [newCircle, setNewCircle] = useState({ name: "Mukono LPG Mothers Circle", target_amount: "250000" });
   const [inviteCode, setInviteCode] = useState("");
   const [amount, setAmount] = useState("25000");
   const [paymentMethod, setPaymentMethod] = useState("momo");
+  const [deliveryForm, setDeliveryForm] = useState({ item_name: "LPG starter kit", delivery_location: user.location || "" });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("error");
 
@@ -275,12 +277,14 @@ function MemberDashboard({ user, token }) {
   };
 
   const refresh = async () => {
-    const [circleData, lessonData] = await Promise.all([
+    const [circleData, lessonData, deliveryData] = await Promise.all([
       callApi("/api/circles/my"),
-      callApi("/api/lessons")
+      callApi("/api/lessons"),
+      callApi("/api/deliveries/my")
     ]);
     setCircles(circleData.circles || []);
     setLessons(lessonData.lessons || []);
+    setDeliveries(deliveryData.deliveries || []);
     const nextActive = activeId || circleData.circles?.[0]?.circle_id || null;
     setActiveId(nextActive);
     if (nextActive) {
@@ -336,7 +340,7 @@ function MemberDashboard({ user, token }) {
   const contribute = () => run(
     () => callApi(`/api/circles/${activeCircle.circle_id}/contributions`, {
       method: "POST",
-      body: JSON.stringify({ amount, payment_method: paymentMethod })
+      body: JSON.stringify({ amount, method: paymentMethod })
     }),
     "Sandbox payment recorded"
   );
@@ -351,6 +355,18 @@ function MemberDashboard({ user, token }) {
     "Certificate generated."
   );
 
+  const requestDelivery = () => run(
+    () => callApi("/api/deliveries", {
+      method: "POST",
+      body: JSON.stringify({
+        circle_id: activeCircle.circle_id,
+        item_name: deliveryForm.item_name,
+        delivery_location: deliveryForm.delivery_location
+      })
+    }),
+    "LPG delivery request created."
+  );
+
   const completedCount = lessons.filter((lesson) => lesson.completed).length;
 
   return (
@@ -360,6 +376,15 @@ function MemberDashboard({ user, token }) {
         <h1>{user.full_name}'s Oluganda Circle workspace</h1>
         <p className="intro-copy mb-0">Create or join circles, record sandbox household savings, finish lessons, and check certificate readiness for the LPG transition.</p>
       </section>
+      <Card className="profile-card mb-4"><CardContent>
+        <p className="eyebrow mb-1">Member Profile</p>
+        <div className="profile-grid">
+          <span>Name</span><strong>{user.full_name}</strong>
+          <span>Phone</span><strong>{user.phone_number}</strong>
+          <span>Location</span><strong>{user.location || "Location not set"}</strong>
+          <span>Journey</span><strong>Clean cooking journey</strong>
+        </div>
+      </CardContent></Card>
       <Message text={message} type={messageType} />
       <div className="row g-4 mt-1">
         <div className="col-lg-5">
@@ -367,7 +392,7 @@ function MemberDashboard({ user, token }) {
             <p className="eyebrow mb-1">My Circles</p>
             <h2 className="card-heading mb-3">Oluganda Circle list</h2>
             <div className="circle-list">
-              {circles.length === 0 && <Alert severity="info">No circles yet. Create one or join with an invite code.</Alert>}
+              {circles.length === 0 && <Alert severity="info">No records yet.</Alert>}
               {circles.map((circle) => <CircleCard key={circle.circle_id} circle={circle} selected={activeCircle?.circle_id === circle.circle_id} onSelect={setActiveId} />)}
             </div>
           </CardContent></Card>
@@ -428,6 +453,7 @@ function MemberDashboard({ user, token }) {
               <Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} size="small">
                 <MenuItem value="momo">MTN MoMo</MenuItem>
                 <MenuItem value="airtel">Airtel Money</MenuItem>
+                <MenuItem value="cash">Cash</MenuItem>
               </Select>
               <Button variant="contained" disabled={!activeCircle} onClick={contribute}>Save contribution</Button>
             </div>
@@ -441,6 +467,7 @@ function MemberDashboard({ user, token }) {
               <Chip label={`${completedCount}/${lessons.length} completed`} />
             </div>
             <div className="topic-list">
+              {lessons.length === 0 && <Alert severity="info">No records yet.</Alert>}
               {lessons.map((lesson) => (
                 <button key={lesson.lesson_id} type="button" className={`topic-item ${lesson.completed ? "complete" : ""}`} onClick={() => completeLesson(lesson.lesson_id)}>
                   <span><strong>{lesson.title}</strong><small>{lesson.body}</small></span>
@@ -468,6 +495,35 @@ function MemberDashboard({ user, token }) {
             ) : (
               <Button className="mt-3" variant="contained" disabled={!activeCircle} onClick={generateCertificate}>Generate certificate</Button>
             )}
+          </CardContent></Card>
+        </div>
+
+        <div className="col-lg-6">
+          <Card className="section-card h-100"><CardContent>
+            <p className="eyebrow mb-1">LPG Transition</p>
+            <h2 className="card-heading mb-3">Delivery request</h2>
+            <p className="payment-note mb-3">Available after the Enkola Certificate is issued.</p>
+            <div className="form-stack">
+              <TextField label="Item" value={deliveryForm.item_name} onChange={(event) => setDeliveryForm({ ...deliveryForm, item_name: event.target.value })} size="small" />
+              <TextField label="Delivery location" value={deliveryForm.delivery_location} onChange={(event) => setDeliveryForm({ ...deliveryForm, delivery_location: event.target.value })} size="small" />
+              <Button variant="contained" disabled={!activeCircle || certificateStatus?.certificate?.certificate_status !== "issued"} onClick={requestDelivery}>Request LPG delivery</Button>
+            </div>
+          </CardContent></Card>
+        </div>
+
+        <div className="col-lg-6">
+          <Card className="section-card h-100"><CardContent>
+            <p className="eyebrow mb-1">Delivery Status</p>
+            <h2 className="card-heading mb-3">My requests</h2>
+            <div className="certificate-list">
+              {deliveries.length === 0 && <Alert severity="info">No records yet.</Alert>}
+              {deliveries.map((delivery) => (
+                <div className="certificate-row" key={delivery.delivery_id}>
+                  <span>{delivery.item_name} - {delivery.circle_name}</span>
+                  <Chip label={delivery.delivery_status} size="small" />
+                </div>
+              ))}
+            </div>
           </CardContent></Card>
         </div>
       </div>
@@ -546,10 +602,10 @@ function AmbassadorDashboard({ user, token }) {
                   <strong>{referral.full_name}</strong>
                   <span>{referral.circle_name || "No circle yet"}</span>
                   <Chip label={`${referral.progress_percentage}%`} size="small" />
-                  <span>{referral.transition_status}</span>
+                  <span>{referral.transition_status || referral.referral_status}</span>
                 </div>
               ))}
-              {referrals.length === 0 && <Alert severity="info">No referred households yet.</Alert>}
+              {referrals.length === 0 && <Alert severity="info">No records yet.</Alert>}
             </div>
           </CardContent></Card>
         </div>
@@ -574,12 +630,13 @@ function AdminDashboard({ token }) {
   }, [token]);
 
   const cards = [
-    ["Total households", overview?.total_households ?? "-"],
-    ["Active Oluganda Circles", overview?.active_groups ?? "-"],
+    ["Total users", overview?.total_users ?? "-"],
+    ["Total members", overview?.total_members ?? "-"],
+    ["Total ambassadors", overview?.total_ambassadors ?? "-"],
+    ["Total Oluganda Circles", overview?.total_circles ?? "-"],
     ["Total savings", money(overview?.total_savings)],
     ["Pending deliveries", overview?.pending_deliveries ?? "-"],
-    ["Certificates issued", overview?.certificates_issued ?? "-"],
-    ["Active ambassadors", overview?.active_ambassadors ?? "-"]
+    ["Issued certificates", overview?.issued_certificates ?? "-"]
   ];
 
   return (
@@ -597,16 +654,17 @@ function AdminDashboard({ token }) {
         ))}
         <div className="col-12">
           <Card className="section-card"><CardContent>
-            <p className="eyebrow mb-1">Recent users</p>
+            <p className="eyebrow mb-1">Recent Contributions</p>
             <div className="user-table">
-              {(overview?.recent_users || []).map((recentUser) => (
-                <div className="user-row" key={recentUser.user_id}>
-                  <strong>{recentUser.full_name}</strong>
-                  <span>{recentUser.email || recentUser.phone_number || "No contact"}</span>
-                  <Chip label={roleLabel(recentUser.user_type)} size="small" />
-                  <span>{recentUser.location || "Location not set"}</span>
+              {(overview?.recent_contributions || []).map((contribution) => (
+                <div className="user-row" key={contribution.contribution_id}>
+                  <strong>{contribution.full_name}</strong>
+                  <span>{contribution.circle_name}</span>
+                  <Chip label={money(contribution.amount)} size="small" />
+                  <span>{contribution.method}</span>
                 </div>
               ))}
+              {(overview?.recent_contributions || []).length === 0 && <Alert severity="info">No records yet.</Alert>}
             </div>
           </CardContent></Card>
         </div>

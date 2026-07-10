@@ -1,9 +1,9 @@
 Embeera Energy
 ===============
 
-Embeera Energy is a React Web/Vite + Node.js/Express + MySQL MVP for a controlled Ugandan clean-cooking savings pilot. It supports member, ambassador, and admin dashboards, Oluganda Circle household savings records, LPG transition learning, and Enkola Certificate readiness.
+Embeera Energy is a React Web/Vite + Node.js/Express + MySQL production-demo app for a Ugandan clean-cooking savings pilot. It supports member, ambassador, and admin dashboards, Oluganda Circle household savings, LPG transition lessons, Enkola Certificate readiness, and certificate-gated LPG delivery requests.
 
-This pilot build is not connected to real mobile money, SMS OTP, or live production infrastructure.
+Payments are sandbox records only. No real MTN MoMo, Airtel Money, SMS OTP, USSD, deployment, or PDF certificate integration is included in this phase.
 
 Project Structure
 -----------------
@@ -12,7 +12,7 @@ Project Structure
 embeera-energy-mvp/
   backend/      Node.js + Express API
   frontend/     React Web + Vite app
-  database/     MySQL schema and seed data
+  database/     MySQL schema and demo seed data
   docs/         Project notes
 ```
 
@@ -31,7 +31,7 @@ cd backend
 npm install
 ```
 
-Create `backend/.env` with local values:
+Create `backend/.env`:
 
 ```env
 PORT=5000
@@ -39,40 +39,45 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=your_mysql_password
 DB_NAME=embeera_energy
+AUTH_TOKEN_SECRET=replace_for_local_demo
 ```
 
 Do not commit real credentials.
 
-Database Setup
---------------
+Rebuild Database
+----------------
 
-For a fresh local database, run:
+This creates a clean demo database with only the production-demo tables.
 
 ```powershell
-Get-Content ..\database\schema.sql | mysql -u root -p
-Get-Content ..\database\seed.sql | mysql -u root -p
+Get-Content .\database\schema_demo_production.sql | mysql -u root -p
+Get-Content .\database\seed_demo_production.sql | mysql -u root -p
 ```
 
-The current pilot intentionally avoids a risky full migration. Existing mixed old/new tables can remain, but the `users` table must have `phone_number`, `user_type`, and `password` columns.
+Alternative bcrypt seed path:
 
-Run The Backend
----------------
+```powershell
+Get-Content .\database\schema_demo_production.sql | mysql -u root -p
+cd backend
+npm run seed:demo
+```
+
+Run Backend
+-----------
 
 ```bash
 cd backend
 npm start
 ```
 
-The API runs at:
+API base URL:
 
 ```text
 http://localhost:5000
 ```
 
-On startup, the backend ensures the controlled-pilot admin account exists and has a bcrypt-hashed password.
-
-Run The Frontend
-----------------
+Run Frontend
+------------
 
 Open a second terminal:
 
@@ -82,79 +87,66 @@ npm install
 npm run dev
 ```
 
-Vite runs at:
+Frontend URL:
 
 ```text
 http://localhost:5173
 ```
 
-Build The Frontend
-------------------
+Build Frontend
+--------------
 
 ```bash
 cd frontend
 npm run build
 ```
 
-Pilot Login Setup
------------------
+Demo Users
+----------
 
-Admin account:
-
-```text
-Full name: Masaba Carl Michael
-Phone number: 0703188291
-Email: masabacarl8@gmail.com
-Role: admin
-```
-
-The temporary local pilot admin PIN/password is configured server-side and stored as a bcrypt hash. Do not display it in the frontend.
-
-Members and ambassadors register from the frontend with:
-
-- full name
-- phone number
-- location
-- role: member or ambassador
-- secure PIN, minimum 4 characters
-
-Frontend registration must not create admin users.
-
-Authentication
---------------
-
-Sign in requires:
-
-- phone number
-- PIN/password
-
-Successful login routes users by role:
-
-- admin: Admin Dashboard
-- member: Member Dashboard
-- ambassador: Ambassador Dashboard
-
-Dashboards require a valid backend session token. Admin APIs require the admin role.
-
-Payments
---------
-
-Payments are sandbox records only. The UI and API label successful contribution recording as:
+Use phone number + PIN/password at sign in:
 
 ```text
-Sandbox payment recorded
+Admin:      0703188291 / admin123
+Member:     0772000001 / member123
+Ambassador: 0772000002 / ambassador123
 ```
 
-No real MTN MoMo or Airtel Money credentials are included, and no real money moves.
+The frontend does not display demo credentials, quick login buttons, or admin registration. Admin access is seeded only.
 
-Production Phase Items
-----------------------
+Implemented API
+---------------
 
-These are still required before a real production launch:
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `GET /api/admin/overview`
+- `POST /api/circles`
+- `GET /api/circles/my`
+- `POST /api/circles/join`
+- `GET /api/circles/:circleId`
+- `GET /api/circles/:circleId/members`
+- `POST /api/circles/:circleId/contributions`
+- `GET /api/circles/:circleId/contributions`
+- `GET /api/circles/:circleId/contributions/me`
+- `GET /api/lessons`
+- `POST /api/lessons/:lessonId/complete`
+- `GET /api/lessons/progress/me`
+- `GET /api/circles/:circleId/certificate/status`
+- `POST /api/circles/:circleId/certificate/generate`
+- `GET /api/circles/:circleId/certificate`
+- `POST /api/ambassador/referrals`
+- `GET /api/ambassador/referrals`
+- `POST /api/deliveries`
+- `GET /api/deliveries/my`
+- `GET /api/health`
 
-- real SMS OTP or another verified second-factor flow
-- real MTN MoMo and Airtel Money integrations with provider credentials stored securely
-- JWT or server-side session hardening with expiry and revocation
-- formal database migration scripts and backups
-- HTTPS deployment, production CORS origins, logging, monitoring, and incident handling
-- full security review and user acceptance testing
+Phase 2
+-------
+
+- Real SMS OTP
+- Real MTN MoMo and Airtel Money APIs
+- USSD integration
+- Production deployment, monitoring, and hardened auth/session expiry
+- PDF Enkola Certificate generation
+- Formal migrations and backup/restore process

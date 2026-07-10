@@ -3,14 +3,8 @@ const cors = require("cors");
 const helmet = require("helmet");
 require("dotenv").config();
 
-const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
-const groupRoutes = require("./routes/groupRoutes");
-const paymentRoutes = require("./routes/paymentRoutes");
-const savingsRoutes = require("./routes/savingsRoutes");
-const rewardRoutes = require("./routes/rewardRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
-const learningRoutes = require("./routes/learningRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const circleRoutes = require("./routes/circleRoutes");
 const lessonRoutes = require("./routes/lessonRoutes");
@@ -42,13 +36,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/groups", groupRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/savings", savingsRoutes);
-app.use("/api/rewards", rewardRoutes);
 app.use("/api/deliveries", deliveryRoutes);
-app.use("/api/learning", learningRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/circles", circleRoutes);
 app.use("/api/lessons", lessonRoutes);

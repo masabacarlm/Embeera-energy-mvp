@@ -10,10 +10,7 @@ const LESSONS = [
   ["Preparing for LPG delivery", "What a household should confirm before receiving LPG equipment."]
 ];
 
-const makeCode = (prefix = "OLU") =>
-  `${prefix}${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
-
-const makeToken = () => crypto.randomBytes(24).toString("hex");
+const makeCode = () => `OLU${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
 const userJson = (user) => ({
   user_id: user.user_id,
@@ -25,26 +22,7 @@ const userJson = (user) => ({
   user_type: normalizeRole(user.user_type)
 });
 
-const ensureMvpData = async () => {
-  await db.execute(
-    `CREATE TABLE IF NOT EXISTS otp_requests (
-      phone_number VARCHAR(20) PRIMARY KEY,
-      otp_code VARCHAR(10) NOT NULL,
-      expires_at DATETIME NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`
-  );
-
-  await db.execute(
-    `CREATE TABLE IF NOT EXISTS lessons (
-      lesson_id INT AUTO_INCREMENT PRIMARY KEY,
-      title VARCHAR(150) NOT NULL UNIQUE,
-      body TEXT,
-      sort_order INT NOT NULL DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`
-  );
-
+const ensureLessons = async () => {
   for (let index = 0; index < LESSONS.length; index += 1) {
     await db.execute(
       `INSERT INTO lessons (title, body, sort_order)
@@ -55,15 +33,16 @@ const ensureMvpData = async () => {
   }
 };
 
-const findUserById = async (userId) => {
-  const [rows] = await db.execute(
-    `SELECT user_id, full_name, phone_number, email, location, user_type
-     FROM users
-     WHERE user_id = ?
-     LIMIT 1`,
-    [userId]
-  );
-  return rows[0] || null;
+const getMe = async (req, res) => {
+  res.json({ user: userJson(req.user) });
+};
+
+const requestOtp = async (req, res) => {
+  res.status(501).json({ message: "SMS OTP is planned for Phase 2." });
+};
+
+const verifyOtp = async (req, res) => {
+  res.status(501).json({ message: "SMS OTP is planned for Phase 2." });
 };
 
 const getCircleSummary = async (circleId) => {
@@ -71,8 +50,10 @@ const getCircleSummary = async (circleId) => {
     `SELECT
        c.circle_id,
        c.name,
+       c.location,
        c.target_amount,
        c.invite_code,
+       c.status,
        c.created_by,
        c.created_at,
        COALESCE(SUM(CASE WHEN con.status = 'successful' THEN con.amount ELSE 0 END), 0) AS total_saved
@@ -92,6 +73,7 @@ const getCircleSummary = async (circleId) => {
        u.full_name,
        u.phone_number,
        u.location,
+       cm.member_status,
        cm.joined_at,
        COALESCE(SUM(CASE WHEN con.status = 'successful' THEN con.amount ELSE 0 END), 0) AS contribution_total
      FROM circle_members cm
@@ -100,7 +82,7 @@ const getCircleSummary = async (circleId) => {
        ON con.user_id = u.user_id
       AND con.circle_id = cm.circle_id
      WHERE cm.circle_id = ?
-     GROUP BY u.user_id, cm.joined_at
+     GROUP BY u.user_id, cm.circle_member_id
      ORDER BY cm.joined_at ASC`,
     [circleId]
   );
@@ -125,90 +107,17 @@ const hasCircleAccess = async (circleId, user) => {
   const [rows] = await db.execute(
     `SELECT circle_member_id
      FROM circle_members
-     WHERE circle_id = ? AND user_id = ?
+     WHERE circle_id = ? AND user_id = ? AND member_status = 'active'
      LIMIT 1`,
     [circleId, user.user_id]
   );
   return rows.length > 0;
 };
 
-const requestOtp = async (req, res) => {
-  const { phone_number } = req.body;
-
-  if (!phone_number) {
-    return res.status(400).json({ message: "Phone number is required." });
-  }
-
-  try {
-    await ensureMvpData();
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-    await db.execute(
-      `INSERT INTO otp_requests (phone_number, otp_code, expires_at)
-       VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE otp_code = VALUES(otp_code), expires_at = VALUES(expires_at), created_at = CURRENT_TIMESTAMP`,
-      [phone_number, otp, expiresAt]
-    );
-
-    res.status(501).json({ message: "SMS OTP is not enabled for this controlled pilot." });
-  } catch (error) {
-    console.error("Request OTP error:", error);
-    res.status(500).json({ message: "Could not generate OTP." });
-  }
-};
-
-const verifyOtp = async (req, res) => {
-  const { phone_number, otp } = req.body;
-
-  if (!phone_number || !otp) {
-    return res.status(400).json({ message: "Phone number and OTP are required." });
-  }
-
-  try {
-    await ensureMvpData();
-    const [otpRows] = await db.execute(
-      `SELECT otp_code, expires_at
-       FROM otp_requests
-       WHERE phone_number = ?
-       LIMIT 1`,
-      [phone_number]
-    );
-
-    if (otpRows.length === 0 || otpRows[0].otp_code !== otp || new Date(otpRows[0].expires_at) < new Date()) {
-      return res.status(401).json({ message: "Invalid OTP." });
-    }
-
-    const [userRows] = await db.execute(
-      `SELECT user_id, full_name, phone_number, email, location, user_type
-       FROM users
-       WHERE phone_number = ?
-       LIMIT 1`,
-      [phone_number]
-    );
-
-    if (userRows.length === 0) {
-      return res.status(404).json({ message: "No user exists for this phone number." });
-    }
-
-    const token = makeToken();
-    await db.execute(`UPDATE users SET session_token = ? WHERE user_id = ?`, [token, userRows[0].user_id]);
-    await db.execute(`DELETE FROM otp_requests WHERE phone_number = ?`, [phone_number]);
-
-    res.json({ message: "Login successful", token, user: userJson(userRows[0]) });
-  } catch (error) {
-    console.error("Verify OTP error:", error);
-    res.status(500).json({ message: "Could not verify OTP." });
-  }
-};
-
-const getMe = async (req, res) => {
-  res.json({ user: userJson(req.user) });
-};
-
 const createCircle = async (req, res) => {
-  const { name, target_amount } = req.body;
-  const target = Number(target_amount);
+  const name = String(req.body.name || "").trim();
+  const location = String(req.body.location || req.user.location || "").trim() || null;
+  const target = Number(req.body.target_amount);
 
   if (!name || !Number.isFinite(target) || target <= 0) {
     return res.status(400).json({ message: "Circle name and target amount greater than zero are required." });
@@ -218,19 +127,18 @@ const createCircle = async (req, res) => {
   try {
     await connection.beginTransaction();
     let inviteCode = makeCode();
-    let inserted = false;
     let result;
 
-    while (!inserted) {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
       try {
         [result] = await connection.execute(
-          `INSERT INTO circles (name, target_amount, invite_code, created_by)
-           VALUES (?, ?, ?, ?)`,
-          [name, target, inviteCode, req.user.user_id]
+          `INSERT INTO circles (name, location, target_amount, invite_code, created_by)
+           VALUES (?, ?, ?, ?, ?)`,
+          [name, location, target, inviteCode, req.user.user_id]
         );
-        inserted = true;
+        break;
       } catch (error) {
-        if (error.code !== "ER_DUP_ENTRY") throw error;
+        if (error.code !== "ER_DUP_ENTRY" || attempt === 4) throw error;
         inviteCode = makeCode();
       }
     }
@@ -238,7 +146,7 @@ const createCircle = async (req, res) => {
     await connection.execute(
       `INSERT INTO circle_members (circle_id, user_id)
        VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE joined_at = joined_at`,
+       ON DUPLICATE KEY UPDATE member_status = 'active'`,
       [result.insertId, req.user.user_id]
     );
 
@@ -259,7 +167,7 @@ const getMyCircles = async (req, res) => {
       `SELECT c.circle_id
        FROM circle_members cm
        JOIN circles c ON c.circle_id = cm.circle_id
-       WHERE cm.user_id = ?
+       WHERE cm.user_id = ? AND cm.member_status = 'active'
        ORDER BY c.created_at DESC`,
       [req.user.user_id]
     );
@@ -273,26 +181,26 @@ const getMyCircles = async (req, res) => {
 };
 
 const joinCircle = async (req, res) => {
-  const { invite_code } = req.body;
+  const inviteCode = String(req.body.invite_code || "").trim().toUpperCase();
 
-  if (!invite_code) {
+  if (!inviteCode) {
     return res.status(400).json({ message: "Invite code is required." });
   }
 
   try {
     const [rows] = await db.execute(
-      `SELECT circle_id FROM circles WHERE invite_code = ? LIMIT 1`,
-      [String(invite_code).trim().toUpperCase()]
+      `SELECT circle_id FROM circles WHERE invite_code = ? AND status = 'active' LIMIT 1`,
+      [inviteCode]
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Invalid invite code." });
+      return res.status(404).json({ message: "Invite code was not found." });
     }
 
     await db.execute(
       `INSERT INTO circle_members (circle_id, user_id)
        VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE joined_at = joined_at`,
+       ON DUPLICATE KEY UPDATE member_status = 'active'`,
       [rows[0].circle_id, req.user.user_id]
     );
 
@@ -305,10 +213,9 @@ const joinCircle = async (req, res) => {
 
 const getCircle = async (req, res) => {
   const circleId = Number(req.params.circleId);
-
   try {
     if (!(await hasCircleAccess(circleId, req.user))) {
-      return res.status(403).json({ message: "User not authorised for this circle." });
+      return res.status(403).json({ message: "Join this Oluganda Circle to view it." });
     }
     const circle = await getCircleSummary(circleId);
     if (!circle) return res.status(404).json({ message: "Circle not found." });
@@ -320,22 +227,30 @@ const getCircle = async (req, res) => {
 };
 
 const getCircleMembers = async (req, res) => {
-  const circle = await getCircleSummary(Number(req.params.circleId));
-  if (!circle) return res.status(404).json({ message: "Circle not found." });
-  res.json({ members: circle.members });
+  try {
+    if (!(await hasCircleAccess(Number(req.params.circleId), req.user))) {
+      return res.status(403).json({ message: "Join this Oluganda Circle to view members." });
+    }
+    const circle = await getCircleSummary(Number(req.params.circleId));
+    if (!circle) return res.status(404).json({ message: "Circle not found." });
+    res.json({ members: circle.members });
+  } catch (error) {
+    console.error("Circle members error:", error);
+    res.status(500).json({ message: "Could not load members." });
+  }
 };
 
 const createContribution = async (req, res) => {
   const circleId = Number(req.params.circleId);
   const amount = Number(req.body.amount);
-  const paymentMethod = req.body.payment_method;
+  const method = String(req.body.method || req.body.payment_method || "").trim().toLowerCase();
 
   if (!Number.isFinite(amount) || amount <= 0) {
     return res.status(400).json({ message: "Contribution amount must be greater than zero." });
   }
 
-  if (!["momo", "airtel"].includes(paymentMethod)) {
-    return res.status(400).json({ message: "Payment method must be momo or airtel." });
+  if (!["momo", "airtel", "cash"].includes(method)) {
+    return res.status(400).json({ message: "Contribution method must be momo, airtel, or cash." });
   }
 
   try {
@@ -343,10 +258,11 @@ const createContribution = async (req, res) => {
       return res.status(403).json({ message: "Join this Oluganda Circle before contributing." });
     }
 
+    const reference = `SANDBOX-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
     const [result] = await db.execute(
-      `INSERT INTO contributions (circle_id, user_id, amount, payment_method, status)
-       VALUES (?, ?, ?, ?, 'successful')`,
-      [circleId, req.user.user_id, amount, paymentMethod]
+      `INSERT INTO contributions (circle_id, user_id, amount, method, status, transaction_reference)
+       VALUES (?, ?, ?, ?, 'successful', ?)`,
+      [circleId, req.user.user_id, amount, method, reference]
     );
 
     res.status(201).json({
@@ -356,8 +272,9 @@ const createContribution = async (req, res) => {
         circle_id: circleId,
         user_id: req.user.user_id,
         amount,
-        payment_method: paymentMethod,
-        status: "successful"
+        method,
+        status: "successful",
+        transaction_reference: reference
       },
       circle: await getCircleSummary(circleId)
     });
@@ -369,6 +286,9 @@ const createContribution = async (req, res) => {
 
 const getContributions = async (req, res) => {
   try {
+    if (!(await hasCircleAccess(Number(req.params.circleId), req.user))) {
+      return res.status(403).json({ message: "Join this Oluganda Circle to view contributions." });
+    }
     const [rows] = await db.execute(
       `SELECT con.*, u.full_name
        FROM contributions con
@@ -402,8 +322,8 @@ const getMyContributions = async (req, res) => {
 
 const getLessons = async (req, res) => {
   try {
-    await ensureMvpData();
-    const [lessons] = await db.execute(`SELECT * FROM lessons ORDER BY sort_order ASC, lesson_id ASC`);
+    await ensureLessons();
+    const [lessons] = await db.execute(`SELECT lesson_id, title, body, sort_order FROM lessons ORDER BY sort_order ASC, lesson_id ASC`);
     const [completed] = await db.execute(
       `SELECT lesson_id FROM lesson_completions WHERE user_id = ?`,
       [req.user.user_id]
@@ -423,7 +343,10 @@ const getLessons = async (req, res) => {
 
 const getLesson = async (req, res) => {
   try {
-    const [rows] = await db.execute(`SELECT * FROM lessons WHERE lesson_id = ? LIMIT 1`, [req.params.lessonId]);
+    const [rows] = await db.execute(
+      `SELECT lesson_id, title, body, sort_order FROM lessons WHERE lesson_id = ? LIMIT 1`,
+      [req.params.lessonId]
+    );
     if (rows.length === 0) return res.status(404).json({ message: "Lesson not found." });
     res.json({ lesson: rows[0] });
   } catch (error) {
@@ -449,6 +372,7 @@ const completeLesson = async (req, res) => {
 
 const getLessonProgress = async (req, res) => {
   try {
+    await ensureLessons();
     const [[lessonCount]] = await db.execute(`SELECT COUNT(*) AS total FROM lessons`);
     const [[completionCount]] = await db.execute(
       `SELECT COUNT(*) AS completed FROM lesson_completions WHERE user_id = ?`,
@@ -465,6 +389,7 @@ const getLessonProgress = async (req, res) => {
 };
 
 const getCertificateStatusForCircle = async (circleId) => {
+  await ensureLessons();
   const circle = await getCircleSummary(circleId);
   if (!circle) return null;
 
@@ -473,7 +398,7 @@ const getCertificateStatusForCircle = async (circleId) => {
     `SELECT cm.user_id, COUNT(lc.lesson_id) AS completed_lessons
      FROM circle_members cm
      LEFT JOIN lesson_completions lc ON lc.user_id = cm.user_id
-     WHERE cm.circle_id = ?
+     WHERE cm.circle_id = ? AND cm.member_status = 'active'
      GROUP BY cm.user_id`,
     [circleId]
   );
@@ -485,6 +410,7 @@ const getCertificateStatusForCircle = async (circleId) => {
   const totalLessons = Number(lessonCount.total || 0);
   const allLessonsComplete =
     memberRows.length > 0 &&
+    totalLessons > 0 &&
     memberRows.every((row) => Number(row.completed_lessons || 0) >= totalLessons);
   const savingsReady = circle.total_saved >= circle.target_amount;
   const qualified = savingsReady && allLessonsComplete;
@@ -504,6 +430,9 @@ const getCertificateStatusForCircle = async (circleId) => {
 
 const certificateStatus = async (req, res) => {
   try {
+    if (!(await hasCircleAccess(Number(req.params.circleId), req.user))) {
+      return res.status(403).json({ message: "Join this Oluganda Circle to view certificate status." });
+    }
     const status = await getCertificateStatusForCircle(Number(req.params.circleId));
     if (!status) return res.status(404).json({ message: "Circle not found." });
     res.json(status);
@@ -517,6 +446,9 @@ const generateCertificate = async (req, res) => {
   const circleId = Number(req.params.circleId);
 
   try {
+    if (!(await hasCircleAccess(circleId, req.user))) {
+      return res.status(403).json({ message: "Join this Oluganda Circle to generate a certificate." });
+    }
     const status = await getCertificateStatusForCircle(circleId);
     if (!status) return res.status(404).json({ message: "Circle not found." });
     if (!status.qualified) {
@@ -524,12 +456,12 @@ const generateCertificate = async (req, res) => {
     }
 
     const circle = await getCircleSummary(circleId);
-    const summary = `${circle.name} has completed the Embeera Energy clean LPG transition readiness journey with UGX ${Number(circle.total_saved).toLocaleString()} saved.`;
+    const summary = `${circle.name} has completed the Embeera Energy clean cooking journey with UGX ${Number(circle.total_saved).toLocaleString()} saved toward the LPG transition.`;
 
     await db.execute(
       `INSERT INTO certificates (circle_id, certificate_status, issued_at, summary_text)
        VALUES (?, 'issued', CURRENT_TIMESTAMP, ?)
-       ON DUPLICATE KEY UPDATE certificate_status = certificate_status`,
+       ON DUPLICATE KEY UPDATE certificate_status = 'issued', summary_text = VALUES(summary_text), issued_at = COALESCE(issued_at, CURRENT_TIMESTAMP)`,
       [circleId, summary]
     );
 
@@ -543,6 +475,9 @@ const generateCertificate = async (req, res) => {
 
 const getCertificate = async (req, res) => {
   try {
+    if (!(await hasCircleAccess(Number(req.params.circleId), req.user))) {
+      return res.status(403).json({ message: "Join this Oluganda Circle to view the certificate." });
+    }
     const [rows] = await db.execute(
       `SELECT * FROM certificates WHERE circle_id = ? LIMIT 1`,
       [req.params.circleId]
@@ -556,9 +491,11 @@ const getCertificate = async (req, res) => {
 };
 
 const addReferral = async (req, res) => {
-  const { full_name, phone_number, location } = req.body;
+  const fullName = String(req.body.full_name || "").trim();
+  const phoneNumber = String(req.body.phone_number || "").trim();
+  const location = String(req.body.location || "").trim() || req.user.location || null;
 
-  if (!full_name || !phone_number) {
+  if (!fullName || !phoneNumber) {
     return res.status(400).json({ message: "Household name and phone number are required." });
   }
 
@@ -568,7 +505,7 @@ const addReferral = async (req, res) => {
 
     const [existing] = await connection.execute(
       `SELECT user_id FROM users WHERE phone_number = ? LIMIT 1`,
-      [phone_number]
+      [phoneNumber]
     );
 
     let referredUserId = existing[0]?.user_id;
@@ -576,7 +513,7 @@ const addReferral = async (req, res) => {
       const [result] = await connection.execute(
         `INSERT INTO users (full_name, phone_number, location, user_type)
          VALUES (?, ?, ?, 'member')`,
-        [full_name, phone_number, location || req.user.location || "Mukono"]
+        [fullName, phoneNumber, location]
       );
       referredUserId = result.insertId;
     }
@@ -623,10 +560,10 @@ const referralRowsFor = async (ambassadorId, referredUserId = null) => {
        cert.certificate_id
      FROM ambassador_referrals ar
      JOIN users u ON u.user_id = ar.referred_user_id
-     LEFT JOIN circle_members cm ON cm.user_id = u.user_id
+     LEFT JOIN circle_members cm ON cm.user_id = u.user_id AND cm.member_status = 'active'
      LEFT JOIN circles c ON c.circle_id = cm.circle_id
      LEFT JOIN contributions con ON con.circle_id = c.circle_id
-     LEFT JOIN certificates cert ON cert.circle_id = c.circle_id
+     LEFT JOIN certificates cert ON cert.circle_id = c.circle_id AND cert.certificate_status = 'issued'
      WHERE ar.ambassador_id = ?
        ${filter}
      GROUP BY ar.referral_id, u.user_id, c.circle_id, cert.certificate_id
@@ -644,10 +581,10 @@ const referralRowsFor = async (ambassadorId, referredUserId = null) => {
       total_saved: saved,
       progress_percentage: progress,
       transition_status: row.certificate_id
-        ? "certificate-ready"
+        ? "completed"
         : progress > 0
-          ? "transitioning"
-          : "saving"
+          ? "active"
+          : row.referral_status
     };
   });
 };
