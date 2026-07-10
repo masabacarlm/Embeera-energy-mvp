@@ -1,12 +1,11 @@
 const bcrypt = require("bcryptjs");
 const db = require("../config/db");
 const { createToken, normalizeRole } = require("../middleware/authMiddleware");
+const { fail, ok } = require("../utils/apiResponse");
 
 const REGISTRATION_USER_TYPES = ["member", "ambassador"];
 const BCRYPT_PREFIXES = ["$2a$", "$2b$", "$2y$"];
-const PASSWORD_MIN_LENGTH = 4;
-const DEFAULT_PILOT_ADMIN_PASSWORD_HASH =
-  "$2b$10$Yd06PWYvEXl89JywZaayE.L7vAAZ/lkmxlSdwN7.doxcl8padO9Uq";
+const PASSWORD_MIN_LENGTH = 6;
 
 const userJson = (user) => ({
   user_id: user.user_id,
@@ -22,34 +21,32 @@ const isBcryptHash = (value) =>
   typeof value === "string" && BCRYPT_PREFIXES.some((prefix) => value.startsWith(prefix));
 
 const ensurePilotAdmin = async () => {
+  const pilotPhone = String(process.env.PILOT_ADMIN_PHONE || "").trim();
+  const pilotEmail = String(process.env.PILOT_ADMIN_EMAIL || "").trim();
+  const pilotHash = String(process.env.PILOT_ADMIN_PASSWORD_HASH || "").trim();
+
+  if (!pilotPhone && !pilotEmail) return;
+
   try {
     const [rows] = await db.execute(
       `SELECT user_id, password_hash
        FROM users
        WHERE phone_number = ? OR email = ?
        LIMIT 1`,
-      ["0703188291", "masabacarl8@gmail.com"]
+      [pilotPhone || "__no_phone__", pilotEmail || "__no_email__"]
     );
 
     if (rows.length === 0) return;
 
     const currentHash = rows[0].password_hash;
-    const passwordHash = isBcryptHash(currentHash)
-      ? currentHash
-      : process.env.PILOT_ADMIN_PASSWORD_HASH || DEFAULT_PILOT_ADMIN_PASSWORD_HASH;
+    const passwordHash = isBcryptHash(currentHash) ? currentHash : pilotHash;
+    if (!isBcryptHash(passwordHash)) return;
 
     await db.execute(
       `UPDATE users
-       SET full_name = ?, phone_number = ?, email = ?, location = ?, user_type = 'admin', password_hash = ?
+       SET user_type = 'admin', password_hash = ?
        WHERE user_id = ?`,
-      [
-        "Masaba Carl Michael",
-        "0703188291",
-        "masabacarl8@gmail.com",
-        "Mukono",
-        passwordHash,
-        rows[0].user_id
-      ]
+      [passwordHash, rows[0].user_id]
     );
   } catch (error) {
     if (error.code !== "ER_NO_SUCH_TABLE" && error.code !== "ER_BAD_FIELD_ERROR") throw error;
@@ -61,7 +58,7 @@ const login = async (req, res) => {
   const password = String(req.body.password || "");
 
   if (!phoneNumber || !password) {
-    return res.status(400).json({ message: "Phone number and PIN/password are required." });
+    return fail(res, 400, "Phone number and PIN/password are required.");
   }
 
   try {
@@ -74,24 +71,23 @@ const login = async (req, res) => {
     );
 
     if (rows.length === 0 || !rows[0].password_hash) {
-      return res.status(401).json({ message: "Phone number or PIN/password is incorrect." });
+      return fail(res, 401, "Phone number or PIN/password is incorrect.");
     }
 
     const user = rows[0];
     const passwordMatches = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordMatches) {
-      return res.status(401).json({ message: "Phone number or PIN/password is incorrect." });
+      return fail(res, 401, "Phone number or PIN/password is incorrect.");
     }
 
-    res.json({
-      message: "Login successful",
+    ok(res, "Login successful", {
       token: createToken(user.user_id),
       user: userJson(user)
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Could not sign in." });
+    fail(res, 500, "Could not sign in.");
   }
 };
 
@@ -102,25 +98,52 @@ const register = async (req, res) => {
   const location = String(req.body.location || "").trim();
   const userType = String(req.body.user_type || "member").trim().toLowerCase();
   const password = String(req.body.password || "");
+  const errors = [];
 
-  if (!fullName || !phoneNumber) {
-    return res.status(400).json({ message: "Full name and phone number are required." });
-  }
+  if (!fullName) errors.push("Full name is required.");
+  if (!phoneNumber) errors.push("Phone number is required.");
+  if (!location) errors.push("Location is required.");
 
   if (!password || password.length < PASSWORD_MIN_LENGTH) {
-    return res.status(400).json({ message: "Create a secure PIN with at least 4 characters." });
+    errors.push("Create a secure PIN/password with at least 6 characters.");
   }
 
   if (!REGISTRATION_USER_TYPES.includes(userType)) {
-    return res.status(400).json({ message: "User type must be member or ambassador." });
+    errors.push("User type must be member or ambassador.");
+  }
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push("Email address is invalid.");
+  }
+
+  if (errors.length > 0) {
+    return fail(res, 400, errors[0], errors);
   }
 
   try {
+    const [duplicatePhoneRows] = await db.execute(
+      `SELECT user_id FROM users WHERE phone_number = ? LIMIT 1`,
+      [phoneNumber]
+    );
+    if (duplicatePhoneRows.length > 0) {
+      return fail(res, 409, "This phone number is already registered. Please sign in instead.");
+    }
+
+    if (email) {
+      const [duplicateEmailRows] = await db.execute(
+        `SELECT user_id FROM users WHERE email = ? LIMIT 1`,
+        [email]
+      );
+      if (duplicateEmailRows.length > 0) {
+        return fail(res, 409, "Email address is already registered.");
+      }
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
     const [result] = await db.execute(
       `INSERT INTO users (full_name, phone_number, email, location, user_type, password_hash)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [fullName, phoneNumber, email, location || null, userType, passwordHash]
+      [fullName, phoneNumber, email, location, userType, passwordHash]
     );
 
     const [rows] = await db.execute(
@@ -131,17 +154,16 @@ const register = async (req, res) => {
       [result.insertId]
     );
 
-    res.status(201).json({
-      message: "Account created successfully.",
+    ok(res, "Account created successfully.", {
       user: userJson(rows[0])
-    });
+    }, 201);
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({ message: "Phone number or email is already registered." });
+      return fail(res, 409, "Phone number or email is already registered.");
     }
 
     console.error("Register error:", error);
-    res.status(500).json({ message: "Could not create account." });
+    fail(res, 500, "Could not create account.");
   }
 };
 

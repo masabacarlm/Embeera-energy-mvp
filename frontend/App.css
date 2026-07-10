@@ -80,6 +80,8 @@ textarea {
   justify-content: center;
   padding: 36px;
 }
+.auth-logo { width: min(280px, 80%); margin-bottom: 24px; }
+.auth-hero { width: min(460px, 100%); margin: 24px auto 0; max-height: 260px; }
 
 .login-copy h1 {
   font-size: clamp(2rem, 4vw, 3rem);
@@ -211,6 +213,11 @@ textarea {
 .navbar-brand:hover {
   color: #174d3f;
 }
+.navbar-brand img { display:block; height:48px; width:auto; }
+.phase-two { background:#fffdf7; border:1px solid #e1ddd1; border-radius:12px; padding:24px; }
+.phase-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+.phase-card { display:flex; flex-direction:column; gap:12px; justify-content:space-between; background:#fbfaf5; border:1px solid #e3ddcf; border-radius:8px; padding:16px; }
+.status-badge { align-self:flex-start; background:#fff0dc; color:#855112; border-radius:999px; font-size:.75rem; font-weight:800; padding:5px 9px; }
 
 .nav-chip {
   background: #e8f0de !important;

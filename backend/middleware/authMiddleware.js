@@ -1,7 +1,14 @@
-const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 const db = require("../config/db");
+const { fail } = require("../utils/apiResponse");
 
-const TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || "embeera-demo-local-secret";
+const getTokenSecret = () => {
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("JWT_SECRET is required in production.");
+  }
+  return "development-only-embeera-secret-change-before-production";
+};
 
 const normalizeRole = (role) => {
   if (role === "household") return "member";
@@ -14,42 +21,25 @@ const readToken = (req) => {
   return null;
 };
 
-const signPayload = (payload) =>
-  crypto.createHmac("sha256", TOKEN_SECRET).update(payload).digest("hex");
-
-const createToken = (userId) => {
-  const payload = Buffer.from(
-    JSON.stringify({
-      user_id: userId,
-      nonce: crypto.randomBytes(16).toString("hex"),
-      issued_at: Date.now()
-    })
-  ).toString("base64url");
-  return `${payload}.${signPayload(payload)}`;
-};
+const createToken = (userId) => jwt.sign({ user_id: userId }, getTokenSecret(), { expiresIn: "24h" });
 
 const verifyToken = (token) => {
-  if (!token || !token.includes(".")) return null;
-  const [payload, signature] = token.split(".");
-  const expected = signPayload(payload);
-  if (!signature || signature.length !== expected.length) return null;
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
   try {
-    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return jwt.verify(token, getTokenSecret());
   } catch (error) {
     return null;
   }
 };
 
 const requireAuth = async (req, res, next) => {
-  const token = readToken(req);
-  const payload = verifyToken(token);
-
-  if (!payload?.user_id) {
-    return res.status(401).json({ message: "Please sign in to continue." });
-  }
-
   try {
+    const token = readToken(req);
+    const payload = verifyToken(token);
+
+    if (!payload?.user_id) {
+      return fail(res, 401, "Please sign in to continue.");
+    }
+
     const [rows] = await db.execute(
       `SELECT user_id, full_name, phone_number, email, location, user_type
        FROM users
@@ -59,7 +49,7 @@ const requireAuth = async (req, res, next) => {
     );
 
     if (rows.length === 0) {
-      return res.status(401).json({ message: "Please sign in to continue." });
+      return fail(res, 401, "Please sign in to continue.");
     }
 
     req.user = {
@@ -70,14 +60,14 @@ const requireAuth = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Auth middleware error:", error);
-    res.status(500).json({ message: "Could not verify session." });
+    fail(res, 500, "Could not verify session.");
   }
 };
 
 const requireRole = (...roles) => (req, res, next) => {
   const allowed = roles.map(normalizeRole);
   if (!req.user || !allowed.includes(normalizeRole(req.user.user_type))) {
-    return res.status(403).json({ message: "User not authorised for this action." });
+    return fail(res, 403, "User not authorised for this action.");
   }
   next();
 };
@@ -86,5 +76,7 @@ module.exports = {
   createToken,
   normalizeRole,
   requireAuth,
-  requireRole
+  requireRole,
+  authenticate: requireAuth,
+  allowRoles: requireRole
 };

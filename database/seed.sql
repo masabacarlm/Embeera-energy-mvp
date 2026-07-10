@@ -1,74 +1,64 @@
 USE embeera_energy;
 
-INSERT INTO users (full_name, phone_number, email, password, location, user_type) VALUES
-('Masaba Carl Michael', '0703188291', 'masabacarl8@gmail.com', '$2b$10$Yd06PWYvEXl89JywZaayE.L7vAAZ/lkmxlSdwN7.doxcl8padO9Uq', 'Mukono', 'admin'),
-('Amina Nakato', '0772000001', 'household@embeera.local', '$2b$10$g5auhVM4Di7dx//Jb.5CMudzH2Q9Mihkq91Tos0hWubsRf4GkPKqi', 'Mukono', 'member'),
-('Sarah Namutebi', '0772000002', 'ambassador@embeera.local', '$2b$10$t21D9hODuftN/m6s1Awi8.7fytPcK2ZX0lfRhnlnwOpQ62DQ25SjW', 'Mukono', 'ambassador'),
-('John Ssewanyana', '0772000003', NULL, '$2b$10$Ae8KZfEaQanCC8qb2E61P..08uV2VtI19l4ytSyzK2F/zLk4S2thq', 'Seeta', 'member');
+INSERT INTO users (user_id, full_name, phone_number, email, password_hash, location, user_type) VALUES
+(1, 'Masaba Carl Michael', '0703188291', 'masabacarl8@gmail.com', '$2b$10$PVm1AA6Hr9G8ct.hUUcHp.YtSP4Xg9lQfot0MwsBGbBfMHw6sijAG', 'Mukono', 'admin'),
+(2, 'Amina Nakato', '0772000001', 'household@embeera.local', '$2b$10$edLIJuLo4e1Aj4wkYgFXGuHzb4ORGLAbci0zQVvjzIYASuiJQSN62', 'Mukono', 'member'),
+(3, 'Sarah Namutebi', '0772000002', 'ambassador@embeera.local', '$2b$10$FS62LYJuRZma4g1YUMh/JON5gfkQgQkspJEWxsmRldp0jD9vmyq02', 'Seeta', 'ambassador'),
+(4, 'John Ssewanyana', '0772000003', NULL, '$2b$10$edLIJuLo4e1Aj4wkYgFXGuHzb4ORGLAbci0zQVvjzIYASuiJQSN62', 'Seeta', 'member')
+ON DUPLICATE KEY UPDATE
+  full_name = VALUES(full_name),
+  email = VALUES(email),
+  password_hash = VALUES(password_hash),
+  location = VALUES(location),
+  user_type = VALUES(user_type);
 
-INSERT INTO circles (name, target_amount, invite_code, created_by) VALUES
-('Mukono LPG Mothers Circle', 250000, 'OLU-MUKONO', 2),
-('Seeta Clean Kitchen Circle', 300000, 'OLU-SEETA', 3);
+INSERT INTO circles (circle_id, name, location, target_amount, invite_code, status, created_by) VALUES
+(1, 'Mukono LPG Mothers Circle', 'Mukono', 90000, 'OLU-MUKONO', 'active', 2),
+(2, 'Seeta Clean Kitchen Circle', 'Seeta', 300000, 'OLU-SEETA', 'active', 3)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  location = VALUES(location),
+  target_amount = VALUES(target_amount),
+  status = VALUES(status);
 
-INSERT INTO circle_members (user_id, circle_id) VALUES
-(2, 1),
-(4, 1),
-(3, 2);
+INSERT INTO circle_members (circle_id, user_id, member_status) VALUES
+(1, 2, 'active'),
+(1, 4, 'active'),
+(2, 3, 'active')
+ON DUPLICATE KEY UPDATE member_status = 'active';
 
-INSERT INTO contributions (user_id, circle_id, amount, payment_method, status) VALUES
-(2, 1, 40000, 'momo', 'successful'),
-(4, 1, 25000, 'airtel', 'successful'),
-(3, 2, 30000, 'momo', 'successful');
+INSERT INTO contributions (circle_id, user_id, amount, method, status, transaction_reference) VALUES
+(1, 2, 45000, 'momo', 'successful', 'SANDBOX-SEED-001'),
+(1, 4, 45000, 'airtel', 'successful', 'SANDBOX-SEED-002'),
+(2, 3, 30000, 'cash', 'successful', 'SANDBOX-SEED-003')
+ON DUPLICATE KEY UPDATE
+  amount = VALUES(amount),
+  method = VALUES(method),
+  status = VALUES(status);
 
-INSERT INTO lessons (title, body, sort_order) VALUES
-('Why clean cooking matters', 'How LPG reduces smoke exposure and pressure on charcoal and firewood.', 1),
-('Safe LPG cylinder handling', 'Cylinder storage, leak checks, and safe stove use at home.', 2),
-('How to save consistently', 'Small regular deposits through an Oluganda Circle.', 3),
-('Reducing smoke at home', 'Practical ways to keep kitchens healthier during transition.', 4),
-('Preparing for LPG delivery', 'What a household should confirm before receiving LPG equipment.', 5);
+INSERT INTO lessons (lesson_id, title, body, sort_order) VALUES
+(1, 'Why clean cooking matters', 'How LPG reduces smoke exposure and pressure on charcoal and firewood.', 1),
+(2, 'Safe LPG cylinder handling', 'Cylinder storage, leak checks, and safe stove use at home.', 2),
+(3, 'How to save consistently', 'Small regular deposits through an Oluganda Circle.', 3),
+(4, 'Reducing smoke at home', 'Practical ways to keep kitchens healthier during transition.', 4),
+(5, 'Preparing for LPG delivery', 'What a household should confirm before receiving LPG equipment.', 5)
+ON DUPLICATE KEY UPDATE body = VALUES(body), sort_order = VALUES(sort_order);
 
 INSERT INTO lesson_completions (user_id, lesson_id) VALUES
-(2, 1),
-(2, 2),
-(2, 3);
+(2, 1), (2, 2), (2, 3), (2, 4), (2, 5),
+(4, 1), (4, 2), (4, 3), (4, 4), (4, 5)
+ON DUPLICATE KEY UPDATE completed_at = completed_at;
+
+INSERT INTO certificates (circle_id, certificate_status, summary_text, issued_at) VALUES
+(1, 'issued', 'Mukono LPG Mothers Circle has completed the clean cooking journey and is ready for LPG transition.', CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  certificate_status = VALUES(certificate_status),
+  summary_text = VALUES(summary_text),
+  issued_at = COALESCE(issued_at, CURRENT_TIMESTAMP);
 
 INSERT INTO ambassador_referrals (ambassador_id, referred_user_id, referral_status) VALUES
-(3, 2, 'transitioning'),
-(3, 4, 'saving');
+(3, 2, 'completed')
+ON DUPLICATE KEY UPDATE referral_status = VALUES(referral_status);
 
-INSERT INTO oluganda_groups (group_name, location, savings_target, current_amount) VALUES
-('Mukono Clean Cooking Group', 'Mukono', 250000, 80000),
-('Seeta LPG Savings Circle', 'Seeta', 250000, 50000);
-
-INSERT INTO group_members (user_id, group_id, member_status) VALUES
-(2, 1, 'active'),
-(4, 2, 'active');
-
-INSERT INTO savings_transactions (user_id, group_id, amount, payment_method, transaction_status) VALUES
-(2, 1, 10000, 'MTN MoMo', 'successful'),
-(2, 1, 20000, 'Airtel Money', 'successful'),
-(4, 2, 15000, 'MTN MoMo', 'successful');
-
-INSERT INTO learning_progress (user_id, topic_name, completion_status) VALUES
-(2, 'Benefits of LPG', 'completed'),
-(2, 'LPG Safety Tips', 'completed'),
-(4, 'Benefits of LPG', 'completed');
-
-INSERT INTO rewards (user_id, reward_type, points, reward_status) VALUES
-(2, 'Savings Reward', 30, 'active'),
-(2, 'Learning Reward', 20, 'active'),
-(4, 'Savings Reward', 15, 'active');
-
-INSERT INTO ambassadors (user_id, assigned_location, referrals_count) VALUES
-(3, 'Mukono', 2);
-
-INSERT INTO referrals (ambassador_id, referred_user_id, referral_status) VALUES
-(1, 2, 'Started Saving'),
-(1, 4, 'Joined Oluganda Circle');
-
-INSERT INTO deliveries (user_id, group_id, item_name, delivery_status, delivery_location) VALUES
-(2, 1, 'LPG Stove and Cylinder', 'Pending', 'Mukono');
-
-INSERT INTO certificates (user_id, certificate_status) VALUES
-(2, 'In Progress'),
-(4, 'Not Eligible');
+INSERT INTO delivery_requests (user_id, circle_id, item_name, delivery_status, delivery_location) VALUES
+(2, 1, 'LPG starter kit', 'pending', 'Mukono');

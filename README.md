@@ -1,152 +1,48 @@
-Embeera Energy
-===============
+<p align="center"><img src="frontend/public/brand/embeera-logo.svg" alt="Embeera Energy" width="360"></p>
 
-Embeera Energy is a React Web/Vite + Node.js/Express + MySQL production-demo app for a Ugandan clean-cooking savings pilot. It supports member, ambassador, and admin dashboards, Oluganda Circle household savings, LPG transition lessons, Enkola Certificate readiness, and certificate-gated LPG delivery requests.
+# Embeera Energy
 
-Payments are sandbox records only. No real MTN MoMo, Airtel Money, SMS OTP, USSD, deployment, or PDF certificate integration is included in this phase.
+Embeera Energy helps Ugandan households transition from charcoal and firewood to LPG through community Oluganda Circles: **Join → Save → Transition → Earn**. Contributions in this production demo are sandbox records only; no real money moves.
 
-Project Structure
------------------
+## Roles and Phase One
 
-```text
-embeera-energy-mvp/
-  backend/      Node.js + Express API
-  frontend/     React Web + Vite app
-  database/     MySQL schema and demo seed data
-  docs/         Project notes
-```
+- **Members** register, manage their profile, create or join circles, record sandbox contributions, track savings, complete five safety lessons, qualify for an Enkola Certificate, and request LPG delivery.
+- **Ambassadors** register, refer existing member households, and track each referral's circle, lesson, savings, and certificate readiness.
+- **Admins** sign in through seeded/managed accounts and monitor users, circles, contributions, certificates, referrals, and deliveries. Public admin registration is rejected.
 
-Requirements
-------------
+Authentication uses bcrypt password hashes and short-lived JWTs sent in the Authorization header. Routes enforce current database identity and roles; browser-supplied ownership IDs are not trusted. Helmet, rate limiting, strict production CORS, parameterized SQL, bounded JSON bodies, and production-safe errors are enabled.
 
-- Node.js and npm
-- MySQL Server
-- Backend `.env` with local database settings
+## Architecture
 
-Backend Setup
--------------
+- React 18 and Vite frontend hosted by **Vercel** (`frontend`, output `dist`)
+- Node.js and Express API hosted by **Railway** (`backend`, `npm start`)
+- Railway MySQL service using `mysql2/promise`
+- One GitHub repository is the deployment source for both services
 
-```bash
-cd backend
+The browser calls the public Railway API through `VITE_API_URL`. Vite proxies `/api` only during local development; production does not depend on localhost or Express static frontend hosting.
+
+## Environment and commands
+
+Copy the `.env.example` files only for local configuration; never commit real environment files.
+
+Frontend requires `VITE_API_URL=https://YOUR-RAILWAY-DOMAIN/api` in Vercel. Backend production requires `JWT_SECRET`, `NODE_ENV=production`, `HOST=0.0.0.0`, `FRONTEND_URL`/`FRONTEND_URLS`, and Railway `MYSQL_URL` or the five `MYSQL*` connection variables.
+
+```sh
+cd frontend
 npm install
-```
+npm run build
 
-Create `backend/.env`:
-
-```env
-PORT=5000
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=embeera_energy
-AUTH_TOKEN_SECRET=replace_for_local_demo
-```
-
-Do not commit real credentials.
-
-Rebuild Database
-----------------
-
-This creates a clean demo database with only the production-demo tables.
-
-```powershell
-Get-Content .\database\schema_demo_production.sql | mysql -u root -p
-Get-Content .\database\seed_demo_production.sql | mysql -u root -p
-```
-
-Alternative bcrypt seed path:
-
-```powershell
-Get-Content .\database\schema_demo_production.sql | mysql -u root -p
-cd backend
-npm run seed:demo
-```
-
-Run Backend
------------
-
-```bash
-cd backend
+cd ../backend
+npm install
+npm run db:migrate
+npm run db:seed-demo  # deliberate demo-data action only
 npm start
 ```
 
-API base URL:
+The canonical tables are `users`, `circles`, `circle_members`, `contributions`, `lessons`, `lesson_completions`, `certificates`, `ambassador_referrals`, and `delivery_requests`. Migrations do not delete the database and seed data is not run automatically. Demo credentials are documented in `DEMO_GUIDE.md`, never displayed in the login UI.
 
-```text
-http://localhost:5000
-```
+## Phase Two preview
 
-Run Frontend
-------------
+Real MTN MoMo, Airtel Money, SMS OTP, `*284*88#` USSD, PDF certificates, mobile apps, audit logs, privacy controls, and custom-domain deployment are marked **Coming Soon** and are not active in this demo.
 
-Open a second terminal:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend URL:
-
-```text
-http://localhost:5173
-```
-
-Build Frontend
---------------
-
-```bash
-cd frontend
-npm run build
-```
-
-Demo Users
-----------
-
-Use phone number + PIN/password at sign in:
-
-```text
-Admin:      0703188291 / admin123
-Member:     0772000001 / member123
-Ambassador: 0772000002 / ambassador123
-```
-
-The frontend does not display demo credentials, quick login buttons, or admin registration. Admin access is seeded only.
-
-Implemented API
----------------
-
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `GET /api/admin/overview`
-- `POST /api/circles`
-- `GET /api/circles/my`
-- `POST /api/circles/join`
-- `GET /api/circles/:circleId`
-- `GET /api/circles/:circleId/members`
-- `POST /api/circles/:circleId/contributions`
-- `GET /api/circles/:circleId/contributions`
-- `GET /api/circles/:circleId/contributions/me`
-- `GET /api/lessons`
-- `POST /api/lessons/:lessonId/complete`
-- `GET /api/lessons/progress/me`
-- `GET /api/circles/:circleId/certificate/status`
-- `POST /api/circles/:circleId/certificate/generate`
-- `GET /api/circles/:circleId/certificate`
-- `POST /api/ambassador/referrals`
-- `GET /api/ambassador/referrals`
-- `POST /api/deliveries`
-- `GET /api/deliveries/my`
-- `GET /api/health`
-
-Phase 2
--------
-
-- Real SMS OTP
-- Real MTN MoMo and Airtel Money APIs
-- USSD integration
-- Production deployment, monitoring, and hardened auth/session expiry
-- PDF Enkola Certificate generation
-- Formal migrations and backup/restore process
+See [VERCEL_RAILWAY_DEPLOYMENT.md](VERCEL_RAILWAY_DEPLOYMENT.md) for the exact deployment order and [docs/VERCEL_RAILWAY_TESTING.md](docs/VERCEL_RAILWAY_TESTING.md) for live verification.

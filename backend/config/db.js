@@ -1,15 +1,17 @@
 const mysql = require("mysql2/promise");
 require("dotenv").config();
 
-// One shared connection pool is used by all controllers.
-// Copy .env.example to .env and fill in your local MySQL details.
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "embeera_energy",
-  waitForConnections: true,
-  connectionLimit: 10
-});
+const pool = process.env.MYSQL_URL
+  ? mysql.createPool({ uri: process.env.MYSQL_URL, waitForConnections: true, connectionLimit: 10, queueLimit: 0 })
+  : mysql.createPool({
+      host: process.env.MYSQLHOST || process.env.DB_HOST || "localhost",
+      port: Number(process.env.MYSQLPORT || process.env.DB_PORT || 3306),
+      user: process.env.MYSQLUSER || process.env.DB_USER,
+      password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
+      database: process.env.MYSQLDATABASE || process.env.DB_NAME || "embeera_energy",
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
+    });
 
 module.exports = pool;

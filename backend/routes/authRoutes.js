@@ -11,7 +11,7 @@ const authLimiter = rateLimit({
   limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many auth attempts. Please try again later." }
+  message: { success: false, message: "Too many auth attempts. Please try again later.", errors: [] }
 });
 
 router.use(authLimiter);

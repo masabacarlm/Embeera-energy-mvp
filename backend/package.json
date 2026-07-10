@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "seed:demo": "node scripts/seedDemoProduction.js"
+    "dev": "nodemon server.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed-demo": "node scripts/seedDemo.js",
+    "test:smoke": "node scripts/smokeTest.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -14,6 +17,8 @@
     "express": "^4.18.2",
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
-    "mysql2": "^3.22.6"
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.22.6",
+    "nodemon": "^3.1.10"
   }
 }

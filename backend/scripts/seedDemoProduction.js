@@ -1,4 +1,3 @@
-const bcrypt = require("bcryptjs");
 const db = require("../config/db");
 
 const users = [
@@ -8,7 +7,7 @@ const users = [
     email: "masabacarl8@gmail.com",
     location: "Mukono",
     user_type: "admin",
-    password: "admin123"
+    password_hash: "$2b$10$PVm1AA6Hr9G8ct.hUUcHp.YtSP4Xg9lQfot0MwsBGbBfMHw6sijAG"
   },
   {
     full_name: "Amina Nakato",
@@ -16,7 +15,7 @@ const users = [
     email: "household@embeera.local",
     location: "Mukono",
     user_type: "member",
-    password: "member123"
+    password_hash: "$2b$10$edLIJuLo4e1Aj4wkYgFXGuHzb4ORGLAbci0zQVvjzIYASuiJQSN62"
   },
   {
     full_name: "Sarah Namutebi",
@@ -24,7 +23,7 @@ const users = [
     email: "ambassador@embeera.local",
     location: "Seeta",
     user_type: "ambassador",
-    password: "ambassador123"
+    password_hash: "$2b$10$FS62LYJuRZma4g1YUMh/JON5gfkQgQkspJEWxsmRldp0jD9vmyq02"
   },
   {
     full_name: "John Ssewanyana",
@@ -32,7 +31,7 @@ const users = [
     email: null,
     location: "Seeta",
     user_type: "member",
-    password: "member123"
+    password_hash: "$2b$10$edLIJuLo4e1Aj4wkYgFXGuHzb4ORGLAbci0zQVvjzIYASuiJQSN62"
   }
 ];
 
@@ -45,7 +44,6 @@ const lessons = [
 ];
 
 const upsertUser = async (connection, user) => {
-  const passwordHash = await bcrypt.hash(user.password, 10);
   await connection.execute(
     `INSERT INTO users (full_name, phone_number, email, password_hash, location, user_type)
      VALUES (?, ?, ?, ?, ?, ?)
@@ -55,7 +53,7 @@ const upsertUser = async (connection, user) => {
        password_hash = VALUES(password_hash),
        location = VALUES(location),
        user_type = VALUES(user_type)`,
-    [user.full_name, user.phone_number, user.email, passwordHash, user.location, user.user_type]
+    [user.full_name, user.phone_number, user.email, user.password_hash, user.location, user.user_type]
   );
 
   const [rows] = await connection.execute(
@@ -88,9 +86,10 @@ const run = async () => {
       `INSERT INTO circles (circle_id, name, location, target_amount, invite_code, status, created_by)
        VALUES
        (1, 'Mukono LPG Mothers Circle', 'Mukono', 90000, 'OLU-MUKONO', 'active', ?),
-       (2, 'Seeta Clean Kitchen Circle', 'Seeta', 300000, 'OLU-SEETA', 'active', ?)
+       (2, 'Seeta Clean Kitchen Circle', 'Seeta', 300000, 'OLU-SEETA', 'active', ?),
+       (3, 'Kampala Starter Circle', 'Kampala', 500000, 'OLU-KAMPALA', 'active', ?)
        ON DUPLICATE KEY UPDATE name = VALUES(name), location = VALUES(location), target_amount = VALUES(target_amount), status = VALUES(status)`,
-      [ids["0772000001"], ids["0772000002"]]
+      [ids["0772000001"], ids["0772000002"], ids["0772000002"]]
     );
 
     await connection.execute(
@@ -101,7 +100,7 @@ const run = async () => {
     );
 
     await connection.execute(
-      `INSERT INTO contributions (circle_id, user_id, amount, method, status, transaction_reference)
+      `INSERT IGNORE INTO contributions (circle_id, user_id, amount, method, status, transaction_reference)
        VALUES
        (1, ?, 45000, 'momo', 'successful', 'SANDBOX-SEED-001'),
        (1, ?, 45000, 'airtel', 'successful', 'SANDBOX-SEED-002'),
@@ -136,9 +135,10 @@ const run = async () => {
 
     await connection.execute(
       `INSERT INTO delivery_requests (user_id, circle_id, item_name, delivery_status, delivery_location)
-       VALUES (?, 1, 'LPG starter kit', 'pending', 'Mukono')
+       VALUES (?, 1, 'LPG starter kit', 'pending', 'Mukono'),
+              (?, 1, 'LPG refill', 'delivered', 'Mukono')
        ON DUPLICATE KEY UPDATE delivery_status = delivery_status`,
-      [ids["0772000001"]]
+      [ids["0772000001"], ids["0772000003"]]
     );
 
     await connection.commit();

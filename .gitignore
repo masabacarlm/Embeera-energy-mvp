@@ -4,6 +4,11 @@ frontend/node_modules/
 
 .env
 .env.local
+.env.production
+frontend/.env.*
+!frontend/.env.example
+backend/.env.*
+!backend/.env.example
 
 .DS_Store
 Thumbs.db
@@ -15,3 +20,8 @@ yarn-error.log*
 .expo/
 dist/
 build/
+backend/.env
+.env
+frontend/dist/
+database/backups/
+*.log

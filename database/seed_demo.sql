@@ -1,0 +1,3 @@
+-- Demo data is seeded through `cd backend && npm run db:seed-demo` so bcrypt hashes
+-- are generated/maintained safely and inserts can be made idempotent in application code.
+-- See backend/scripts/seedDemo.js and backend/scripts/seedDemoProduction.js.

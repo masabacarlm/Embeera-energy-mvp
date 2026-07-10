@@ -5,11 +5,11 @@ const {
   getLessonProgress,
   getLessons
 } = require("../controllers/mvpController");
-const { requireAuth } = require("../middleware/authMiddleware");
+const { requireAuth, requireRole } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.use(requireAuth);
+router.use(requireAuth, requireRole("member", "ambassador"));
 router.get("/", getLessons);
 router.get("/progress/me", getLessonProgress);
 router.get("/:lessonId", getLesson);
