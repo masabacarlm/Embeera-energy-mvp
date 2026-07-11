@@ -178,9 +178,25 @@ function Login({ onLogin }) {
     } catch (error) {
       setMessageType("error");
       const backendMessage = safeApiErrorMessage(error.response?.data?.message);
-      setMessage(backendMessage || (error.request
-        ? "Unable to connect to the server."
-        : "The request could not be completed."));
+      const status = error.response?.status;
+
+      if (import.meta.env.DEV) {
+        console.debug("Registration request failed", {
+          path: "/auth/register",
+          status: status || "network-error",
+          message: backendMessage || "No safe backend message"
+        });
+      }
+
+      if (backendMessage) {
+        setMessage(backendMessage);
+      } else if (!error.response) {
+        setMessage("Unable to connect to the server.");
+      } else if (status >= 500) {
+        setMessage("The server could not complete the request. Please try again.");
+      } else {
+        setMessage("The registration details could not be accepted.");
+      }
     } finally {
       registeringRef.current = false;
       setBusy(false);

@@ -14,25 +14,35 @@ const ambassadorMvpRoutes = require("./routes/ambassadorMvpRoutes");
 const app = express();
 app.set("trust proxy", 1);
 
-const allowedOrigins = [process.env.FRONTEND_URL, process.env.FRONTEND_URLS]
-  .filter(Boolean)
-  .join(",")
+const allowedOrigins = (
+  process.env.FRONTEND_URLS ||
+  process.env.FRONTEND_URL ||
+  ""
+)
   .split(",")
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
 
 app.use(helmet());
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || (process.env.NODE_ENV !== "production" && allowedOrigins.length === 0)) {
-      callback(null, true);
-      return;
+    if (!origin) {
+      return callback(null, true);
     }
-    callback(new Error("Origin not allowed by CORS"));
+
+    const normalizedOrigin = origin.trim().replace(/\/$/, "");
+
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`Blocked CORS origin: ${normalizedOrigin}`);
+    return callback(new Error("Origin not allowed by CORS"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204
 }));
 app.use(express.json({ limit: "100kb" }));
 app.use(rateLimit({
