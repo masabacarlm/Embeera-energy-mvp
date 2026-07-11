@@ -14,14 +14,17 @@ const ambassadorMvpRoutes = require("./routes/ambassadorMvpRoutes");
 const app = express();
 app.set("trust proxy", 1);
 
-const allowedOrigins = (
-  process.env.FRONTEND_URLS ||
-  process.env.FRONTEND_URL ||
-  ""
-)
+const productionFrontendOrigin = "https://embeera-energy-mvp.vercel.app";
+const allowedOrigins = [
+  productionFrontendOrigin,
+  process.env.FRONTEND_URL || "",
+  process.env.FRONTEND_URLS || ""
+]
+  .join(",")
   .split(",")
   .map((origin) => origin.trim().replace(/\/$/, ""))
-  .filter(Boolean);
+  .filter(Boolean)
+  .filter((origin, index, origins) => origins.indexOf(origin) === index);
 
 app.use(helmet());
 app.use(cors({
