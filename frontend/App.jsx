@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Button,
@@ -34,6 +34,11 @@ const authHeaders = (token) => ({
 const normalizedRole = (role) => (role === "household" ? "member" : role);
 const apiMessage = (payload, fallback) =>
   payload?.message || payload?.errors?.[0] || fallback;
+const safeApiErrorMessage = (message) => {
+  if (typeof message !== "string" || !message.trim()) return "";
+  const sensitiveDetails = /(?:sql|mysql|sequelize|stack|trace|environment|process\.env|\bat\s+\S+\s*\(|select\s+.+\s+from|insert\s+into)/i;
+  return sensitiveDetails.test(message) ? "" : message.trim();
+};
 const apiData = (payload) => payload?.data || payload || {};
 const roleLabel = (role) => {
   const currentRole = normalizedRole(role);
@@ -62,11 +67,12 @@ function Login({ onLogin }) {
     email: "",
     location: "",
     user_type: "member",
-    password: ""
+    pin: ""
   });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("error");
   const [busy, setBusy] = useState(false);
+  const registeringRef = useRef(false);
 
   const finishLogin = (data) => {
     const payload = apiData(data);
@@ -116,13 +122,15 @@ function Login({ onLogin }) {
   };
 
   const createAccount = async () => {
+    if (registeringRef.current) return;
+
     const payload = {
       full_name: registerForm.full_name.trim(),
       phone_number: registerForm.phone_number.trim(),
-      email: registerForm.email.trim(),
+      email: registerForm.email.trim() || null,
       location: registerForm.location.trim(),
       user_type: registerForm.user_type,
-      password: registerForm.password
+      password: registerForm.pin
     };
 
     if (!payload.full_name) {
@@ -143,12 +151,19 @@ function Login({ onLogin }) {
       return;
     }
 
+    if (!["member", "ambassador"].includes(payload.user_type)) {
+      setMessageType("error");
+      setMessage("Select a valid role.");
+      return;
+    }
+
     if (!payload.password || payload.password.length < 6) {
       setMessageType("error");
       setMessage("PIN must contain at least 6 characters.");
       return;
     }
 
+    registeringRef.current = true;
     setBusy(true);
     setMessage("");
     try {
@@ -156,16 +171,18 @@ function Login({ onLogin }) {
 
       setPhone(payload.phone_number);
       setPassword("");
-      setRegisterForm({ full_name: "", phone_number: "", email: "", location: "", user_type: "member", password: "" });
+      setRegisterForm({ full_name: "", phone_number: "", email: "", location: "", user_type: "member", pin: "" });
       setMode("signin");
       setMessageType("success");
       setMessage("Account created successfully. You can now sign in with your phone number and PIN.");
     } catch (error) {
       setMessageType("error");
-      setMessage(error.response?.data?.message || (error.request
+      const backendMessage = safeApiErrorMessage(error.response?.data?.message);
+      setMessage(backendMessage || (error.request
         ? "Unable to connect to the server."
         : "The request could not be completed."));
     } finally {
+      registeringRef.current = false;
       setBusy(false);
     }
   };
@@ -260,8 +277,8 @@ function Login({ onLogin }) {
                 </TextField>
                 <TextField
                   label="Create a secure PIN"
-                  value={registerForm.password}
-                  onChange={(event) => setRegisterForm({ ...registerForm, password: event.target.value })}
+                  value={registerForm.pin}
+                  onChange={(event) => setRegisterForm({ ...registerForm, pin: event.target.value })}
                   type="password"
                   helperText="Minimum 6 characters."
                   size="small"
