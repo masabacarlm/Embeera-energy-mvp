@@ -125,28 +125,34 @@ function Login({ onLogin }) {
       password: registerForm.password
     };
 
-    if (!payload.full_name || !payload.phone_number || !payload.location) {
+    if (!payload.full_name) {
       setMessageType("error");
-      setMessage("Full name, phone number, and location are required.");
+      setMessage("Full name is required.");
+      return;
+    }
+
+    if (!payload.phone_number) {
+      setMessageType("error");
+      setMessage("Phone number is required.");
+      return;
+    }
+
+    if (!payload.location) {
+      setMessageType("error");
+      setMessage("Location is required.");
       return;
     }
 
     if (!payload.password || payload.password.length < 6) {
       setMessageType("error");
-      setMessage("Create a secure PIN/password with at least 6 characters.");
+      setMessage("PIN must contain at least 6 characters.");
       return;
     }
 
     setBusy(true);
     setMessage("");
     try {
-      const response = await request("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(apiMessage(data, "Could not create account."));
+      await apiClient.post("/auth/register", payload);
 
       setPhone(payload.phone_number);
       setPassword("");
@@ -156,7 +162,9 @@ function Login({ onLogin }) {
       setMessage("Account created successfully. You can now sign in with your phone number and PIN.");
     } catch (error) {
       setMessageType("error");
-      setMessage(error.message || "Could not create account.");
+      setMessage(error.response?.data?.message || (error.request
+        ? "Unable to connect to the server."
+        : "The request could not be completed."));
     } finally {
       setBusy(false);
     }

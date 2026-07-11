@@ -7,6 +7,20 @@ const REGISTRATION_USER_TYPES = ["member", "ambassador"];
 const BCRYPT_PREFIXES = ["$2a$", "$2b$", "$2y$"];
 const PASSWORD_MIN_LENGTH = 6;
 
+const logRegistrationFailure = (status, message, errorCode) => {
+  console.error("Registration failure", {
+    route: "/api/auth/register",
+    status,
+    message,
+    ...(errorCode ? { database_error_code: errorCode } : {})
+  });
+};
+
+const registrationFail = (res, status, message, errors, errorCode) => {
+  logRegistrationFailure(status, message, errorCode);
+  return fail(res, status, message, errors);
+};
+
 const userJson = (user) => ({
   user_id: user.user_id,
   full_name: user.full_name,
@@ -94,18 +108,21 @@ const login = async (req, res) => {
 const register = async (req, res) => {
   const fullName = String(req.body.full_name || "").trim();
   const phoneNumber = String(req.body.phone_number || "").trim();
-  const email = String(req.body.email || "").trim() || null;
+  const email = String(req.body.email || "").trim().toLowerCase() || null;
   const location = String(req.body.location || "").trim();
   const userType = String(req.body.user_type || "member").trim().toLowerCase();
-  const password = String(req.body.password || "");
+  const password = String(req.body.password || req.body.pin || "");
   const errors = [];
 
   if (!fullName) errors.push("Full name is required.");
+  else if (fullName.length > 120) errors.push("Full name must not exceed 120 characters.");
   if (!phoneNumber) errors.push("Phone number is required.");
+  else if (phoneNumber.length > 30) errors.push("Phone number must not exceed 30 characters.");
   if (!location) errors.push("Location is required.");
+  else if (location.length > 100) errors.push("Location must not exceed 100 characters.");
 
   if (!password || password.length < PASSWORD_MIN_LENGTH) {
-    errors.push("Create a secure PIN/password with at least 6 characters.");
+    errors.push("PIN must contain at least 6 characters.");
   }
 
   if (!REGISTRATION_USER_TYPES.includes(userType)) {
@@ -114,10 +131,12 @@ const register = async (req, res) => {
 
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.push("Email address is invalid.");
+  } else if (email && email.length > 150) {
+    errors.push("Email address must not exceed 150 characters.");
   }
 
   if (errors.length > 0) {
-    return fail(res, 400, errors[0], errors);
+    return registrationFail(res, 400, errors[0], errors);
   }
 
   try {
@@ -126,7 +145,7 @@ const register = async (req, res) => {
       [phoneNumber]
     );
     if (duplicatePhoneRows.length > 0) {
-      return fail(res, 409, "This phone number is already registered. Please sign in instead.");
+      return registrationFail(res, 409, "This phone number is already registered. Please sign in instead.");
     }
 
     if (email) {
@@ -135,7 +154,7 @@ const register = async (req, res) => {
         [email]
       );
       if (duplicateEmailRows.length > 0) {
-        return fail(res, 409, "Email address is already registered.");
+        return registrationFail(res, 409, "This email address is already registered.");
       }
     }
 
@@ -159,11 +178,14 @@ const register = async (req, res) => {
     }, 201);
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
-      return fail(res, 409, "Phone number or email is already registered.");
+      const duplicateEmail = String(error.message || "").includes("uq_users_email");
+      const message = duplicateEmail
+        ? "This email address is already registered."
+        : "This phone number is already registered. Please sign in instead.";
+      return registrationFail(res, 409, message, undefined, error.code);
     }
 
-    console.error("Register error:", error);
-    fail(res, 500, "Could not create account.");
+    registrationFail(res, 500, "Could not create account.", undefined, error.code);
   }
 };
 
