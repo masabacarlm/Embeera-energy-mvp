@@ -17,6 +17,7 @@
 ## Database
 
 - [ ] MySQL connects; `npm run db:migrate` and deliberate `npm run db:seed-demo` succeed.
+- [ ] Migration reads `database/schema_production.sql`; demo data is defined by `database/seed_demo.sql` and seeded by `backend/scripts/seedDemo.js`.
 - [ ] Data survives backend redeployment; user passwords are bcrypt hashes.
 
 ## Features

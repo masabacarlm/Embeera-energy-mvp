@@ -41,7 +41,7 @@ npm run db:migrate
 npm run db:seed-demo
 ```
 
-Migration creates missing canonical tables and does not delete data. Demo seeding is never run at server startup and should only be invoked when grading data is wanted.
+Migration reads `database/schema_production.sql`, creates missing canonical tables, and does not delete data. Demo seeding follows `database/seed_demo.sql` through `backend/scripts/seedDemo.js`; it is never run at server startup and should only be invoked when grading data is wanted.
 
 ## F. Updates
 

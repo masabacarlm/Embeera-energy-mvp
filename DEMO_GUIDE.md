@@ -6,7 +6,7 @@
 
 Install Node.js 18+ (Node 20+ recommended), npm, and MySQL 8. Copy `backend/.env.example` to `backend/.env`, enter local database access values, and replace `JWT_SECRET` with a long random value. Never commit this file.
 
-Run `Set-ExecutionPolicy -Scope Process Bypass`, then `./reset-demo.ps1` when you intentionally want to recreate demo data. This is destructive only to the database named by `DB_NAME`; it is never run automatically. In an Administrator PowerShell, run `./configure-firewall.ps1`. Start with `./start-demo.ps1`.
+Run `Set-ExecutionPolicy -Scope Process Bypass`, then `./reset-demo.ps1` when you intentionally want to apply the non-destructive schema and upsert demo data. Despite its historical filename, this helper does not drop, create, reset, or truncate a database. It invokes `backend/scripts/migrate.js` and `backend/scripts/seedDemo.js`; neither runs automatically. In an Administrator PowerShell, run `./configure-firewall.ps1`. Start with `./start-demo.ps1`.
 
 Find the host address with `ipconfig` and use the active Wi-Fi/Ethernet IPv4 address. Grader URL: `http://<HOST-IPV4>:5000`; health check: `http://<HOST-IPV4>:5000/api/health`.
 
@@ -14,9 +14,9 @@ Find the host address with `ipconfig` and use the active Wi-Fi/Ethernet IPv4 add
 
 | Role | Phone | Temporary password |
 |---|---|---|
-| Admin — Masaba Carl Michael | 0703188291 | Admin@123 |
-| Member — Amina Nakato | 0772000001 | Member@123 |
-| Ambassador — Sarah Namutebi | 0772000002 | Ambassador@123 |
+| Admin — Masaba Carl Michael | 0703188291 | Value securely configured as `DEMO_PASSWORD` |
+| Member — Amina Nakato | 0772000001 | Value securely configured as `DEMO_PASSWORD` |
+| Ambassador — Sarah Namutebi | 0772000002 | Value securely configured as `DEMO_PASSWORD` |
 
 Recommended workflow: sign in as member, inspect circles, record a sandbox contribution, complete lessons, view the certificate, and inspect delivery; sign in as ambassador to review/referral progress; sign in as admin for programme totals and recent activity. Sandbox payments only record demo data and never transfer real money.
 

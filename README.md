@@ -39,7 +39,7 @@ npm run db:seed-demo  # deliberate demo-data action only
 npm start
 ```
 
-The canonical tables are `users`, `circles`, `circle_members`, `contributions`, `lessons`, `lesson_completions`, `certificates`, `ambassador_referrals`, and `delivery_requests`. Migrations do not delete the database and seed data is not run automatically. Demo credentials are documented in `DEMO_GUIDE.md`, never displayed in the login UI.
+The authoritative database files are `database/schema_production.sql` and `database/seed_demo.sql`; the executable entry points are `backend/scripts/migrate.js` and `backend/scripts/seedDemo.js`. The canonical tables are `users`, `circles`, `circle_members`, `contributions`, `lessons`, `lesson_completions`, `certificates`, `ambassador_referrals`, and `delivery_requests`. Migrations do not delete the database and seed data is not run automatically. Demo credentials are documented in `DEMO_GUIDE.md`, never displayed in the login UI.
 
 ## Phase Two preview
 

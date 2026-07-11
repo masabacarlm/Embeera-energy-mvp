@@ -1,5 +1,7 @@
 # Demo Production Testing
 
+Database setup uses only `database/schema_production.sql`, `database/seed_demo.sql`, `backend/scripts/migrate.js`, and `backend/scripts/seedDemo.js`. Run migration and demo seed separately; neither is part of `npm start`.
+
 ## Auth
 - [ ] Member registration; ambassador registration; admin registration rejected
 - [ ] Duplicate phone rejected; wrong PIN rejected; all three demo logins

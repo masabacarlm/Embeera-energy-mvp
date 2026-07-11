@@ -10,7 +10,6 @@ const adminRoutes = require("./routes/adminRoutes");
 const circleRoutes = require("./routes/circleRoutes");
 const lessonRoutes = require("./routes/lessonRoutes");
 const ambassadorMvpRoutes = require("./routes/ambassadorMvpRoutes");
-const { ensurePilotAdmin } = require("./controllers/authController");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -83,14 +82,10 @@ app.use((error, req, res, next) => {
 const PORT = Number(process.env.PORT) || 5000;
 const HOST = process.env.HOST || "0.0.0.0";
 
-if (require.main === module) ensurePilotAdmin()
-  .catch((error) => {
-    console.error("Pilot admin setup error:", error);
-  })
-  .finally(() => {
-    app.listen(PORT, HOST, () => {
-      console.log(`Embeera Energy API listening on port ${PORT}`);
-    });
+if (require.main === module) {
+  app.listen(PORT, HOST, () => {
+    console.log(`Embeera Energy API running on port ${PORT}`);
   });
+}
 
 module.exports = app;
