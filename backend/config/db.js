@@ -7,25 +7,32 @@ const poolOptions = {
   queueLimit: 0
 };
 
-const railwayVariables = [
-  "MYSQLHOST",
-  "MYSQLPORT",
-  "MYSQLUSER",
-  "MYSQLPASSWORD",
-  "MYSQLDATABASE"
+const mysqlVariables = [
+  "MYSQL_HOST",
+  "MYSQL_PORT",
+  "MYSQL_USER",
+  "MYSQL_PASSWORD",
+  "MYSQL_DATABASE"
 ];
-const hasCompleteRailwayConfig = railwayVariables.every((name) => process.env[name]);
+const hasCompleteMysqlConfig = mysqlVariables.every((name) => process.env[name]);
+const ca = process.env.MYSQL_CA_CERT
+  ? process.env.MYSQL_CA_CERT.replace(/\\n/g, "\n")
+  : undefined;
+const ssl = process.env.MYSQL_SSL === "true"
+  ? { rejectUnauthorized: true, ...(ca ? { ca } : {}) }
+  : undefined;
 
 const pool = process.env.MYSQL_URL
-  ? mysql.createPool({ ...poolOptions, uri: process.env.MYSQL_URL })
-  : hasCompleteRailwayConfig
+  ? mysql.createPool({ ...poolOptions, uri: process.env.MYSQL_URL, ...(ssl ? { ssl } : {}) })
+  : hasCompleteMysqlConfig
     ? mysql.createPool({
         ...poolOptions,
-        host: process.env.MYSQLHOST,
-        port: Number(process.env.MYSQLPORT),
-        user: process.env.MYSQLUSER,
-        password: process.env.MYSQLPASSWORD,
-        database: process.env.MYSQLDATABASE
+        host: process.env.MYSQL_HOST,
+        port: Number(process.env.MYSQL_PORT),
+        user: process.env.MYSQL_USER,
+        password: process.env.MYSQL_PASSWORD,
+        database: process.env.MYSQL_DATABASE,
+        ...(ssl ? { ssl } : {})
       })
     : mysql.createPool({
         ...poolOptions,

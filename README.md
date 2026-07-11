@@ -15,17 +15,17 @@ Authentication uses bcrypt password hashes and short-lived JWTs sent in the Auth
 ## Architecture
 
 - React 18 and Vite frontend hosted by **Vercel** (`frontend`, output `dist`)
-- Node.js and Express API hosted by **Railway** (`backend`, `npm start`)
-- Railway MySQL service using `mysql2/promise`
+- Node.js and Express API hosted by **Render** (`backend`, `npm start`)
+- One **Aiven MySQL** service using `mysql2/promise`
 - One GitHub repository is the deployment source for both services
 
-The browser calls the public Railway API through `VITE_API_URL`. Vite proxies `/api` only during local development; production does not depend on localhost or Express static frontend hosting.
+The browser calls the public Render API through `VITE_API_URL`. Vite proxies `/api` only during local development; production does not depend on localhost or Express static frontend hosting.
 
 ## Environment and commands
 
 Copy the `.env.example` files only for local configuration; never commit real environment files.
 
-Frontend requires `VITE_API_URL=https://YOUR-RAILWAY-DOMAIN/api` in Vercel. Backend production requires `JWT_SECRET`, `NODE_ENV=production`, `HOST=0.0.0.0`, `FRONTEND_URL`/`FRONTEND_URLS`, and Railway `MYSQL_URL` or the five `MYSQL*` connection variables.
+Frontend requires `VITE_API_URL=https://YOUR-RENDER-SERVICE.onrender.com/api` in Vercel. Backend production requires `JWT_SECRET`, `NODE_ENV=production`, `HOST=0.0.0.0`, `FRONTEND_URL`/`FRONTEND_URLS`, and the Aiven `MYSQL_URL` or five separate `MYSQL_*` connection variables. Set `MYSQL_SSL=true` and provide `MYSQL_CA_CERT` for verified TLS.
 
 ```sh
 cd frontend
@@ -45,4 +45,4 @@ The authoritative database files are `database/schema_production.sql` and `datab
 
 Real MTN MoMo, Airtel Money, SMS OTP, `*284*88#` USSD, PDF certificates, mobile apps, audit logs, privacy controls, and custom-domain deployment are marked **Coming Soon** and are not active in this demo.
 
-See [VERCEL_RAILWAY_DEPLOYMENT.md](VERCEL_RAILWAY_DEPLOYMENT.md) for the exact deployment order and [docs/VERCEL_RAILWAY_TESTING.md](docs/VERCEL_RAILWAY_TESTING.md) for live verification.
+See [VERCEL_RENDER_AIVEN_DEPLOYMENT.md](VERCEL_RENDER_AIVEN_DEPLOYMENT.md) for the exact deployment order.
