@@ -1,21 +1,16 @@
 import axios from "axios";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? "/api" : "");
+const apiUrl = import.meta.env.VITE_API_URL;
 
-if (!API_URL) {
-  throw new Error(
-    "VITE_API_URL is required for production."
-  );
+if (!apiUrl) {
+  throw new Error("VITE_API_URL is missing from the production build");
 }
 
 const apiClient = axios.create({
-  baseURL: API_URL.replace(/\/$/, ""),
+  baseURL: apiUrl.replace(/\/$/, ""),
   headers: {
     "Content-Type": "application/json"
-  },
-  timeout: 30000
+  }
 });
 
 apiClient.interceptors.request.use((config) => {
