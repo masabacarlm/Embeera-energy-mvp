@@ -7,6 +7,28 @@ const REGISTRATION_USER_TYPES = ["member", "ambassador"];
 const BCRYPT_PREFIXES = ["$2a$", "$2b$", "$2y$"];
 const PASSWORD_MIN_LENGTH = 6;
 
+const validateRegistration = ({ fullName, phoneNumber, email, location, userType, password }) => {
+  const errors = [];
+  if (!fullName) errors.push("Full name is required.");
+  else if (fullName.length > 120) errors.push("Full name must not exceed 120 characters.");
+  if (!phoneNumber) errors.push("Phone number is required.");
+  else if (phoneNumber.length > 30) errors.push("Phone number must not exceed 30 characters.");
+  if (!location) errors.push("Location is required.");
+  else if (location.length > 100) errors.push("Location must not exceed 100 characters.");
+  if (!password || password.length < PASSWORD_MIN_LENGTH) errors.push("PIN must contain at least 6 characters.");
+  if (!REGISTRATION_USER_TYPES.includes(userType)) errors.push("User type must be member or ambassador.");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push("Email address is invalid.");
+  else if (email && email.length > 150) errors.push("Email address must not exceed 150 characters.");
+  return errors;
+};
+
+const validatePasswordChange = (currentPassword, newPassword) => {
+  if (!currentPassword) return "Current PIN/password is required.";
+  if (!newPassword || newPassword.length < PASSWORD_MIN_LENGTH) return "New PIN/password must contain at least 6 characters.";
+  if (currentPassword === newPassword) return "New PIN/password must be different from the current one.";
+  return null;
+};
+
 const logRegistrationFailure = (status, message, errorCode) => {
   console.error("Registration failure", {
     route: "/api/auth/register",
@@ -112,28 +134,7 @@ const register = async (req, res) => {
   const location = String(req.body.location || "").trim();
   const userType = String(req.body.user_type || "member").trim().toLowerCase();
   const password = String(req.body.password || req.body.pin || "");
-  const errors = [];
-
-  if (!fullName) errors.push("Full name is required.");
-  else if (fullName.length > 120) errors.push("Full name must not exceed 120 characters.");
-  if (!phoneNumber) errors.push("Phone number is required.");
-  else if (phoneNumber.length > 30) errors.push("Phone number must not exceed 30 characters.");
-  if (!location) errors.push("Location is required.");
-  else if (location.length > 100) errors.push("Location must not exceed 100 characters.");
-
-  if (!password || password.length < PASSWORD_MIN_LENGTH) {
-    errors.push("PIN must contain at least 6 characters.");
-  }
-
-  if (!REGISTRATION_USER_TYPES.includes(userType)) {
-    errors.push("User type must be member or ambassador.");
-  }
-
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.push("Email address is invalid.");
-  } else if (email && email.length > 150) {
-    errors.push("Email address must not exceed 150 characters.");
-  }
+  const errors = validateRegistration({ fullName, phoneNumber, email, location, userType, password });
 
   if (errors.length > 0) {
     return registrationFail(res, 400, errors[0], errors);
@@ -189,8 +190,30 @@ const register = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  const currentPassword = String(req.body.current_password || "");
+  const newPassword = String(req.body.new_password || "");
+  const validationError = validatePasswordChange(currentPassword, newPassword);
+  if (validationError) return fail(res, 400, validationError);
+
+  try {
+    const [rows] = await db.execute("SELECT password_hash FROM users WHERE user_id = ? LIMIT 1", [req.user.user_id]);
+    if (rows.length === 0) return fail(res, 401, "Please sign in to continue.");
+    if (!(await bcrypt.compare(currentPassword, rows[0].password_hash))) return fail(res, 401, "Current PIN/password is incorrect.");
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await db.execute("UPDATE users SET password_hash = ? WHERE user_id = ?", [passwordHash, req.user.user_id]);
+    ok(res, "PIN/password updated successfully.", {});
+  } catch (error) {
+    console.error("Password change error", { code: error.code || "PASSWORD_CHANGE_FAILED" });
+    fail(res, 500, "Could not update PIN/password.");
+  }
+};
+
 module.exports = {
+  changePassword,
   ensurePilotAdmin,
   login,
-  register
+  register,
+  validatePasswordChange,
+  validateRegistration
 };

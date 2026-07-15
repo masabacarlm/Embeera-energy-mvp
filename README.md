@@ -4,6 +4,26 @@
 
 Embeera Energy helps Ugandan households transition from charcoal and firewood to LPG through community Oluganda Circles: **Join → Save → Transition → Earn**. Contributions in this production demo are sandbox records only; no real money moves.
 
+## MVP implementation status
+
+Fully connected to the existing MySQL schema:
+
+- registration, login, session restoration, logout, and authenticated PIN/password changes
+- circle creation/joining, membership views, group progress, and savings history
+- sandbox MTN MoMo/Airtel/cash contribution records (no real payment integration)
+- lesson listing/completion, certificate eligibility and issuance
+- ambassador referrals for existing households and progress summaries
+- eligible delivery requests and admin delivery status updates
+- admin metrics, recent activity, and a database-aware safe health endpoint
+
+Presentation-only or planned because the current schema has no supporting table or field:
+
+- reward ledgers/redemption, persistent notifications, shareable referral codes, ambassador support notes, account active/inactive status, and delivery status history
+- reward points and ambassador display codes in the UI are explicitly labelled demo estimates
+- real mobile money, SMS, WhatsApp, USSD, and PDF certificate generation remain unavailable
+
+The existing frontend uses React/Vite local component state. Zustand is part of the product architecture direction but is not currently installed or used; adopting it should be an incremental later refactor, not a rewrite.
+
 ## Roles and Phase One
 
 - **Members** register, manage their profile, create or join circles, record sandbox contributions, track savings, complete five safety lessons, qualify for an Enkola Certificate, and request LPG delivery.
@@ -34,10 +54,11 @@ npm run build
 
 cd ../backend
 npm install
-npm run db:migrate
-npm run db:seed-demo  # deliberate demo-data action only
+npm test
 npm start
 ```
+
+Migration and demo seeding are deliberate operator-only actions. Never run them against production as part of tests, builds, or normal deployment.
 
 The authoritative database files are `database/schema_production.sql` and `database/seed_demo.sql`; the executable entry points are `backend/scripts/migrate.js` and `backend/scripts/seedDemo.js`. The canonical tables are `users`, `circles`, `circle_members`, `contributions`, `lessons`, `lesson_completions`, `certificates`, `ambassador_referrals`, and `delivery_requests`. Migrations do not delete the database and seed data is not run automatically. Demo credentials are documented in `DEMO_GUIDE.md`, never displayed in the login UI.
 

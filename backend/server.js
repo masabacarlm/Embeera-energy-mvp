@@ -10,6 +10,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const circleRoutes = require("./routes/circleRoutes");
 const lessonRoutes = require("./routes/lessonRoutes");
 const ambassadorMvpRoutes = require("./routes/ambassadorMvpRoutes");
+const db = require("./config/db");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -60,8 +61,14 @@ app.use(rateLimit({
   }
 }));
 
-app.get("/api/health", (req, res) => {
-  res.json({ success: true, message: "Embeera Energy API is running", data: { status: "healthy" } });
+app.get("/api/health", async (req, res) => {
+  try {
+    await db.execute("SELECT 1");
+    res.json({ success: true, application: "running", database: "connected" });
+  } catch (error) {
+    console.error("Health check database unavailable", { code: error.code || "DATABASE_UNAVAILABLE" });
+    res.status(503).json({ success: false, application: "running", database: "unavailable" });
+  }
 });
 
 app.use("/api/auth", authRoutes);
@@ -86,11 +93,19 @@ app.use((error, req, res, next) => {
     return res.status(403).json({ success: false, message: error.message, errors: [] });
   }
 
-  console.error("Unhandled server error:", error);
+  if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
+    return res.status(400).json({
+      success: false,
+      message: "Request body must contain valid JSON.",
+      errors: []
+    });
+  }
+
+  console.error("Unhandled server error", { name: error.name, code: error.code || "UNEXPECTED_ERROR" });
   res.status(500).json({
     success: false,
     message: "Internal server error",
-    errors: process.env.NODE_ENV === "production" ? [] : [error.message]
+    errors: []
   });
 });
 

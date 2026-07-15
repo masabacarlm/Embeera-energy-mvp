@@ -11,6 +11,8 @@ const getAdminOverview = async (req, res) => {
       [savingsRows],
       [certificateRows],
       [deliveryRows],
+      [completionRows],
+      [newRegistrationRows],
       [recentUserRows],
       [recentReferralRows],
       [recentContributionRows]
@@ -22,6 +24,8 @@ const getAdminOverview = async (req, res) => {
       db.execute(`SELECT COALESCE(SUM(amount), 0) AS total_savings FROM contributions WHERE status = 'successful'`),
       db.execute(`SELECT COUNT(*) AS issued_certificates FROM certificates WHERE certificate_status = 'issued'`),
       db.execute(`SELECT COUNT(*) AS pending_deliveries FROM delivery_requests WHERE delivery_status = 'pending'`),
+      db.execute(`SELECT COUNT(*) AS completed_lessons FROM lesson_completions`),
+      db.execute(`SELECT COUNT(*) AS new_registrations FROM users WHERE created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 30 DAY)`),
       db.execute(
         `SELECT user_id, full_name, phone_number, email, location, user_type, created_at
          FROM users
@@ -57,6 +61,8 @@ const getAdminOverview = async (req, res) => {
       total_savings: Number(savingsRows[0].total_savings),
       issued_certificates: Number(certificateRows[0].issued_certificates),
       pending_deliveries: Number(deliveryRows[0].pending_deliveries),
+      completed_lessons: Number(completionRows[0].completed_lessons),
+      new_registrations: Number(newRegistrationRows[0].new_registrations),
       recent_users: recentUserRows,
       recent_referrals: recentReferralRows,
       recent_contributions: recentContributionRows

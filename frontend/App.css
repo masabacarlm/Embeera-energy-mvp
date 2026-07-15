@@ -34,6 +34,19 @@ textarea {
   font-family: inherit;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.MuiButtonBase-root:focus-visible {
+  outline: 3px solid #b36b21 !important;
+  outline-offset: 3px;
+}
+
+.MuiButton-root,
+.auth-toggle button { min-height: 44px; }
+
 .app-shell {
   background:
     radial-gradient(circle at 85% 8%, rgba(241, 194, 125, 0.16), transparent 25%),
@@ -565,6 +578,11 @@ textarea {
 }
 
 @media (max-width: 767px) {
+  body { font-size: 16px; }
+  .app-navbar { padding: 8px 0; }
+  .navbar-brand img { height: 40px; }
+  .topbar-user .nav-chip { display: none; }
+  .app-main { padding-left: 14px; padding-right: 14px; }
   .login-panel {
     grid-template-columns: 1fr;
   }
@@ -591,4 +609,9 @@ textarea {
   .profile-grid {
     grid-template-columns: 1fr;
   }
+
+  .metric-box,
+  .admin-metric { min-height: 96px; }
+
+  .MuiButton-root { width: 100%; }
 }

@@ -222,3 +222,10 @@ Conclusion
 ----------
 
 These API routes support the Embeera Energy MVP by connecting users, savings groups, mock payments, learning, rewards, LPG delivery tracking, and admin overview metrics.
+# Authentication and health additions
+
+- `GET /api/health` returns application/database availability without connection details; HTTP 503 when MySQL is unavailable.
+- `GET /api/auth/me` validates the bearer token and returns the current database identity.
+- `PATCH /api/auth/me/password` changes the authenticated user's PIN/password. Body: `current_password`, `new_password`.
+
+Malformed JSON returns HTTP 400. Validation, duplicate, authentication, role, and unexpected failures use HTTP 400, 409, 401, 403, and 500 respectively. Error responses never include SQL text, credentials, or stack traces.

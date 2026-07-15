@@ -22,7 +22,13 @@ const request = async (path, options = {}) => {
     });
     return { ok: true, json: async () => response.data };
   } catch (error) {
-    throw new Error(apiMessage(error.response?.data, "The request could not be completed."));
+    if (!error.response) {
+      throw new Error("Unable to connect to Embeera Energy. Check your connection and try again.");
+    }
+    throw new Error(safeApiErrorMessage(apiMessage(error.response.data, "")) ||
+      (error.response.status >= 500
+        ? "The server could not complete the request. Please try again."
+        : "The request could not be completed."));
   }
 };
 
@@ -47,7 +53,7 @@ const roleLabel = (role) => {
 
 function Message({ text, type = "error" }) {
   if (!text) return null;
-  return <Alert severity={type} className="mt-3 py-1">{text}</Alert>;
+  return <Alert severity={type} className="mt-3 py-1" role={type === "error" ? "alert" : "status"}>{text}</Alert>;
 }
 
 function PhaseTwoPreview() {
@@ -330,6 +336,7 @@ function MemberDashboard({ user, token }) {
   const [lessons, setLessons] = useState([]);
   const [certificateStatus, setCertificateStatus] = useState(null);
   const [deliveries, setDeliveries] = useState([]);
+  const [contributions, setContributions] = useState([]);
   const [newCircle, setNewCircle] = useState({ name: "Mukono LPG Mothers Circle", target_amount: "250000" });
   const [inviteCode, setInviteCode] = useState("");
   const [amount, setAmount] = useState("25000");
@@ -338,6 +345,7 @@ function MemberDashboard({ user, token }) {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("error");
   const [busyAction, setBusyAction] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const activeCircle = useMemo(
     () => circles.find((circle) => circle.circle_id === activeId) || circles[0],
@@ -366,13 +374,23 @@ function MemberDashboard({ user, token }) {
     const nextActive = activeId || circleData.circles?.[0]?.circle_id || null;
     setActiveId(nextActive);
     if (nextActive) {
-      const status = await callApi(`/api/circles/${nextActive}/certificate/status`);
+      const [status, contributionData] = await Promise.all([
+        callApi(`/api/circles/${nextActive}/certificate/status`),
+        callApi(`/api/circles/${nextActive}/contributions/me`)
+      ]);
       setCertificateStatus(status.status || status);
+      setContributions(contributionData.contributions || []);
+    } else {
+      setCertificateStatus(null);
+      setContributions([]);
     }
   };
 
   useEffect(() => {
-    refresh().catch((error) => setMessage(error.message));
+    setLoading(true);
+    refresh()
+      .catch((error) => setMessage(error.message))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -461,6 +479,15 @@ function MemberDashboard({ user, token }) {
 
   const completedCount = lessons.filter((lesson) => lesson.completed).length;
   const lessonPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
+  const remaining = Math.max(0, Number(activeCircle?.target_amount || 0) - Number(activeCircle?.total_saved || 0));
+  const personalSaved = contributions
+    .filter((item) => item.status === "successful")
+    .reduce((total, item) => total + Number(item.amount || 0), 0);
+  const rewardPoints = completedCount * 20 + Math.floor(personalSaved / 10000);
+
+  if (loading) {
+    return <Alert severity="info" role="status">Loading your member dashboard...</Alert>;
+  }
 
   return (
     <>
@@ -479,7 +506,21 @@ function MemberDashboard({ user, token }) {
         </div>
       </CardContent></Card>
       <Message text={message} type={messageType} />
+      {message && messageType === "error" && <Button className="mt-2" variant="outlined" onClick={() => { setMessage(""); setLoading(true); refresh().catch((error) => setMessage(error.message)).finally(() => setLoading(false)); }}>Retry dashboard</Button>}
       <div className="row g-4 mt-1">
+        <div className="col-12">
+          <Card className="section-card"><CardContent>
+            <p className="eyebrow mb-1">Journey snapshot</p>
+            <h2 className="card-heading mb-3">Your clean-cooking transition</h2>
+            <div className="row g-3">
+              <div className="col-6 col-lg-3"><div className="metric-box"><span>Active circle</span><strong>{activeCircle?.name || "Not joined"}</strong></div></div>
+              <div className="col-6 col-lg-3"><div className="metric-box"><span>Remaining</span><strong>{money(remaining)}</strong></div></div>
+              <div className="col-6 col-lg-3"><div className="metric-box"><span>Suggested next</span><strong>{money(Math.min(25000, remaining))}</strong></div></div>
+              <div className="col-6 col-lg-3"><div className="metric-box"><span>Demo reward points</span><strong>{rewardPoints}</strong></div></div>
+            </div>
+            <p className="payment-note mt-3 mb-0">Reward points are a dashboard estimate derived from lessons and sandbox savings; no reward ledger exists in the current database schema.</p>
+          </CardContent></Card>
+        </div>
         <div className="col-lg-5">
           <Card className="section-card h-100"><CardContent>
             <p className="eyebrow mb-1">My Circles</p>
@@ -579,6 +620,22 @@ function MemberDashboard({ user, token }) {
 
         <div className="col-lg-6">
           <Card className="section-card h-100"><CardContent>
+            <p className="eyebrow mb-1">Savings history</p>
+            <h2 className="card-heading mb-3">My sandbox contributions</h2>
+            <div className="certificate-list">
+              {contributions.length === 0 && <Alert severity="info">No savings yet. Your sandbox contributions will appear here.</Alert>}
+              {contributions.slice(0, 8).map((contribution) => (
+                <div className="certificate-row" key={contribution.contribution_id}>
+                  <span>{new Date(contribution.created_at).toLocaleDateString()} · {String(contribution.method).toUpperCase()}</span>
+                  <Chip label={`${money(contribution.amount)} · ${contribution.status}`} size="small" />
+                </div>
+              ))}
+            </div>
+          </CardContent></Card>
+        </div>
+
+        <div className="col-lg-6">
+          <Card className="section-card h-100"><CardContent>
             <p className="eyebrow mb-1">Enkola Certificate</p>
             <h2 className="card-heading mb-3">Certificate readiness</h2>
             <div className="certificate-list">
@@ -640,6 +697,20 @@ function AmbassadorDashboard({ user, token }) {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("error");
   const [busy, setBusy] = useState(false);
+  const referralCode = `AMB-${String(user.user_id).padStart(5, "0")}`;
+  const activeHouseholds = referrals.filter((item) => item.referral_status === "active").length;
+  const completedHouseholds = referrals.filter((item) => item.referral_status === "completed").length;
+
+  const copyReferralCode = async () => {
+    try {
+      await navigator.clipboard.writeText(referralCode);
+      setMessageType("success");
+      setMessage("Demo referral code copied.");
+    } catch (error) {
+      setMessageType("error");
+      setMessage("Copy was unavailable. Select the referral code and copy it manually.");
+    }
+  };
 
   const callApi = async (path, options = {}) => {
     const response = await request(path, {
@@ -690,6 +761,19 @@ function AmbassadorDashboard({ user, token }) {
       </section>
       <Message text={message} type={messageType} />
       <div className="row g-4 mt-1">
+        <div className="col-12">
+          <Card className="section-card"><CardContent>
+            <p className="eyebrow mb-1">Ambassador profile</p>
+            <div className="row g-3">
+              <div className="col-6 col-lg-3"><div className="metric-box"><span>Demo referral code</span><strong>{referralCode}</strong></div></div>
+              <div className="col-6 col-lg-3"><div className="metric-box"><span>Registered households</span><strong>{referrals.length}</strong></div></div>
+              <div className="col-6 col-lg-3"><div className="metric-box"><span>Started transition</span><strong>{activeHouseholds}</strong></div></div>
+              <div className="col-6 col-lg-3"><div className="metric-box"><span>Reached target</span><strong>{completedHouseholds}</strong></div></div>
+            </div>
+            <Button className="mt-3" variant="outlined" onClick={copyReferralCode}>Copy demo referral code</Button>
+            <p className="payment-note mt-2 mb-0">The current database links referrals by household phone number and does not store shareable codes; this display code is presentation-only.</p>
+          </CardContent></Card>
+        </div>
         <div className="col-lg-4">
           <Card className="section-card h-100"><CardContent>
             <p className="eyebrow mb-1">Refer Household</p>
@@ -723,6 +807,54 @@ function AmbassadorDashboard({ user, token }) {
   );
 }
 
+function AccountSettings({ user, token, onLogout }) {
+  const [form, setForm] = useState({ current_password: "", new_password: "" });
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("error");
+
+  const updatePassword = async () => {
+    if (busy) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      await apiClient.patch("/auth/me/password", form, { headers: { Authorization: `Bearer ${token}` } });
+      setForm({ current_password: "", new_password: "" });
+      setMessageType("success");
+      setMessage("PIN/password updated. Your current session remains active.");
+    } catch (error) {
+      setMessageType("error");
+      setMessage(!error.response
+        ? "Unable to connect to Embeera Energy. Check your connection and try again."
+        : safeApiErrorMessage(error.response?.data?.message) || "Could not update PIN/password.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return <Card className="section-card mt-4" id="account-settings"><CardContent>
+    <p className="eyebrow mb-1">Profile and settings</p>
+    <h2 className="card-heading mb-3">Account security</h2>
+    <div className="row g-4">
+      <div className="col-lg-6"><div className="profile-grid">
+        <span>Full name</span><strong>{user.full_name}</strong>
+        <span>Phone</span><strong>{user.phone_number}</strong>
+        <span>Email</span><strong>{user.email || "Not provided"}</strong>
+        <span>Location</span><strong>{user.location || "Not provided"}</strong>
+        <span>Role</span><strong>{roleLabel(user.role || user.user_type)} (managed by Embeera)</strong>
+        <span>Account</span><strong>Active</strong>
+      </div></div>
+      <div className="col-lg-6"><div className="form-stack">
+        <TextField label="Current PIN/password" type="password" autoComplete="current-password" value={form.current_password} onChange={(event) => setForm({ ...form, current_password: event.target.value })} size="small" />
+        <TextField label="New PIN/password" type="password" autoComplete="new-password" helperText="Use at least 6 characters." value={form.new_password} onChange={(event) => setForm({ ...form, new_password: event.target.value })} size="small" />
+        <Button variant="contained" onClick={updatePassword} disabled={busy}>{busy ? "Updating..." : "Change PIN/password"}</Button>
+        <Button variant="outlined" onClick={onLogout}>Log out securely</Button>
+        <Message text={message} type={messageType} />
+      </div></div>
+    </div>
+  </CardContent></Card>;
+}
+
 function AdminDashboard({ token }) {
   const [overview, setOverview] = useState(null);
   const [message, setMessage] = useState("");
@@ -746,6 +878,8 @@ function AdminDashboard({ token }) {
     ["Total savings", money(overview?.total_savings)],
     ["Pending deliveries", overview?.pending_deliveries ?? "-"],
     ["Issued certificates", overview?.issued_certificates ?? "-"]
+    ,["Completed lessons", overview?.completed_lessons ?? "-"]
+    ,["New registrations (30 days)", overview?.new_registrations ?? "-"]
   ];
 
   return (
@@ -912,6 +1046,7 @@ export default function App() {
             This account does not have access to an Embeera Energy dashboard.
           </Alert>
         )}
+        {hasDashboard && <AccountSettings user={user} token={token} onLogout={logout} />}
         {hasDashboard && <PhaseTwoPreview />}
       </main>
     </div>
